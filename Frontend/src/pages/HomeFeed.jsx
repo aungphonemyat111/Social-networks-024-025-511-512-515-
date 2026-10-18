@@ -1,15 +1,16 @@
 import React from "react";
-import { 
-  FaHome, 
-  FaUser, 
-  FaPlusCircle, 
-  FaEnvelope, 
-  FaUsers, 
+import {
+  FaHome,
+  FaUser,
+  FaPlusCircle,
+  FaEnvelope,
+  FaUsers,
   FaSearch,
 } from "react-icons/fa";
-import "./HomeFeed.css";
+
+import PostCard from "../components/PostCard";
 import profileImg from "../profile.png";
-import PostCard from "./PostCard";
+import "./HomeFeed.css";
 
 function HomeFeed({ posts = [], onNavigate, onDeletePost, onLikePost, onAddComment, onToggleFriend, followingUsers = {}, likedPosts = {} }) {
   return (

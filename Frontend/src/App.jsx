@@ -7,9 +7,8 @@ import {
   sendEmailVerification,
 } from "firebase/auth";
 import { auth } from "./firebase";
-import HomeFeed from "./components/HomeFeed";
-import CreatePost from "./components/CreatePost";
-
+import HomeFeed from "./pages/HomeFeed";
+import CreatePost from "./pages/CreatePost";
 
 // This is temporary local React state. Replace the handlers with Firebase
 // Authentication + Firestore reads/writes after the frontend is integrated.
