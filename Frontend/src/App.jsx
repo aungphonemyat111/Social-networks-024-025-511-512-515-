@@ -1,10 +1,32 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import Login from "./Login";
+import CreateAccount from "./CreateAccount";
+import {
+  onAuthStateChanged,
+  signOut,
+  sendEmailVerification,
+} from "firebase/auth";
+import { auth } from "./firebase";
 import HomeFeed from "./components/HomeFeed";
 import CreatePost from "./components/CreatePost";
+
 
 // This is temporary local React state. Replace the handlers with Firebase
 // Authentication + Firestore reads/writes after the frontend is integrated.
 export default function App() {
+  const [user, setUser] = useState(null);
+const [loading, setLoading] = useState(true);
+const [authPage, setAuthPage] = useState("login");
+
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    setUser(firebaseUser);
+    setLoading(false);
+  });
+
+  return () => unsubscribe();
+}, []);
+
   const [currentTab, setCurrentTab] = useState("home");
   const [posts, setPosts] = useState([]);
   const [likedPosts, setLikedPosts] = useState({});
@@ -68,8 +90,76 @@ export default function App() {
     setFollowingUsers((previous) => ({ ...previous, [userName]: !previous[userName] }));
   };
 
+  if (loading) {
+    return <p>Loading MorChorConnect...</p>;
+  }
+  
+  if (!user) {
+    if (authPage === "create") {
+      return (
+        <CreateAccount goToLogin={() => setAuthPage("login")} />
+      );
+    }
+  
+    return (
+      <Login goToCreate={() => setAuthPage("create")} />
+    );
+  }
+  
+const isTestAccount =
+import.meta.env.DEV &&
+user.email?.toLowerCase() === "morchor.test@example.com";
+
+if (
+!isTestAccount &&
+(
+  !user.email?.toLowerCase().endsWith("@cmu.ac.th") ||
+  !user.emailVerified
+)
+) {
+
+  return (
+    <div style={{ padding: "40px", textAlign: "center" }}>
+      <h2>Email verification required</h2>
+
+      <p>
+        Please verify your CMU email address before accessing
+        MorChorConnect.
+      </p>
+
+      <button
+        onClick={async () => {
+          try {
+            await sendEmailVerification(user);
+            alert("Verification email sent! Check your CMU inbox.");
+          } catch (error) {
+            console.error("Verification error:", error);
+            alert("Could not send verification email. Please try again later.");
+          }
+        }}
+      >
+        Resend Verification Email
+      </button>
+
+      <button
+        onClick={() => signOut(auth)}
+        style={{ marginLeft: "10px" }}
+      >
+        Return to Login
+      </button>
+    </div>
+  );
+}
+
+
   return (
     <>
+      <div style={{ textAlign: "right", padding: "10px" }}>
+          <button onClick={() => signOut(auth)}>
+                  Log Out
+          </button>
+      </div>
+    
       {currentTab === "home" && (
         <HomeFeed
           posts={posts}
@@ -97,3 +187,9 @@ export default function App() {
     </>
   );
 }
+
+
+  
+  
+
+  

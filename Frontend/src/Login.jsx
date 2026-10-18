@@ -1,6 +1,8 @@
 import { useState } from "react";
 import "./Login.css";
 import elephantImg from "./assets/elephant.png";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "./firebase";
 
 //Creating the whole Login Page Layout
 
@@ -13,22 +15,43 @@ function Login({ goToCreate }) {
     const [error, setError] = useState("");
 
 //Function that will run when the Log In button is clicked
-function handleLogin() {
-    //If user doesn't fill in information
-    if (email === ""|| password === "" ) {
-        setError ("Please fill in all fields.");
-        return;
 
+async function handleLogin() {
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Check for empty fields
+    if (!cleanEmail || !password) {
+        setError("Please fill in all fields.");
+        return;
     }
 
-    //If email doesn't end with @cmu.ac.th
-    if (!email.endsWith("@cmu.ac.th")) {
+    // Allow a development-only test account
+    const isTestAccount =
+        import.meta.env.DEV &&
+        cleanEmail === "morchor.test@example.com";
+
+    // Other accounts must use CMU email addresses
+    if (!cleanEmail.endsWith("@cmu.ac.th") && !isTestAccount) {
         setError("Please use a valid CMU email.");
         return;
     }
 
-    setError ("");
+    setError("");
+
+    try {
+        await signInWithEmailAndPassword(
+            auth,
+            cleanEmail,
+            password
+        );
+
+        console.log("Login successful!");
+    } catch (error) {
+        console.error("Firebase login error:", error.code);
+        setError("Invalid email or password. Please try again.");
+    }
 }
+
     return (
         <div className="login-page">
             <div className="login-left"> 

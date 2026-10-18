@@ -1,6 +1,14 @@
 import { useState } from "react";
 import "./CreateAccount.css";
 import elephantImg from "./assets/elephant.png";
+import {
+    createUserWithEmailAndPassword,
+    updateProfile,
+    sendEmailVerification,
+    signOut
+} from "firebase/auth";
+
+import { auth } from "./firebase";
 
 function CreateAccount( {goToLogin} ) {
 
@@ -15,60 +23,67 @@ function CreateAccount( {goToLogin} ) {
     const [success, setSuccess] = useState("");
 
     //Runs when the Create Account Button is clicked
-    function handleCreateAccount() {
-
-        //If the user clicked Create without filling in information
-        // === means strictly equal (midterm question :) )
-        if ( fullName === "" || email === "" || password === "" || confirmPassword === "" ) {
-            setError ("Please fill in all fields.");
+    async function handleCreateAccount() {
+        const cleanEmail = email.trim().toLowerCase();
+        const cleanName = fullName.trim();
+    
+        setError("");
+        setSuccess("");
+    
+        if (!cleanName || !cleanEmail || !password || !confirmPassword) {
+            setError("Please fill in all fields.");
             return;
         }
-
-        //This checks if the email ends with @cmu.ac.th, if not then an error will occur
-        if (!email.endsWith("@cmu.ac.th")) {
+    
+        if (!cleanEmail.endsWith("@cmu.ac.th")) {
             setError("Please use a valid CMU email.");
             return;
         }
-
-        //Password length should be at least 8 characters
+    
         if (password.length < 8) {
             setError("Password must be at least 8 characters.");
             return;
         }
-
-        //This checks if ConfirmPassword matches password, if not then an error will occur
+    
         if (password !== confirmPassword) {
-            setError ("Passwords do not match.");
+            setError("Passwords do not match.");
             return;
         }
-
-        //Clear any validation error messages if all checks pass/work
-        setError("")
-
-    //BACKEND   //Send an HTTP request to 3000  //fetch() sends info from frontend to the backend
-            fetch("http://localhost:3000/register", {
-        method: "POST",
-
-                //Tells data im sending JSON
-        headers: {
-            "Content-Type": "application/json"
-        },
-        
-        //The data being sent  (Ex: FullName is CJ Dilig) 
-        body: JSON.stringify({
-            fullName: fullName,
-            email: email,
-            password: password
-        })
-     })
-
-
-     //When the backend responds (Convert Json to Javascript Data)
-     .then((response) => response.json())
-     .then((data) => {
-        console.log(data);
-        setSuccess("Account created successfully.");
-     });
+    
+        try {
+            // Create account using Firebase Authentication
+            const userCredential = await createUserWithEmailAndPassword(
+                auth,
+                cleanEmail,
+                password
+            );
+    
+            // Save the user's display name
+            await updateProfile(userCredential.user, {
+                displayName: cleanName
+            });
+    
+            // Send email verification link
+            await sendEmailVerification(userCredential.user);
+    
+            // Require verification before accessing the home feed
+            await signOut(auth);
+    
+            setSuccess(
+                "Account created! Check your CMU email for a verification link, then log in."
+            );
+    
+        } catch (error) {
+            console.error("Firebase registration error:", error.code);
+    
+            if (error.code === "auth/email-already-in-use") {
+                setError("This email is already registered.");
+            } else if (error.code === "auth/weak-password") {
+                setError("Please choose a stronger password.");
+            } else {
+                setError("Could not complete registration. Please try again.");
+            }
+        }
     }
 
     return (
