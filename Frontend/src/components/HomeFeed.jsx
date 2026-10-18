@@ -9,8 +9,9 @@ import {
 } from "react-icons/fa";
 import "./HomeFeed.css";
 import profileImg from "../profile.png";
+import PostCard from "./PostCard";
 
-function HomeFeed({ posts = [], onNavigate, onDeletePost }) {
+function HomeFeed({ posts = [], onNavigate, onDeletePost, onLikePost, onAddComment, onToggleFriend, followingUsers = {}, likedPosts = {} }) {
   return (
     <div className="create-home-feed">
       {/* Master Flex Container */}
@@ -86,87 +87,16 @@ function HomeFeed({ posts = [], onNavigate, onDeletePost }) {
                   </div>
                 ) : (
                   posts.map((post) => (
-                    <div
+                    <PostCard
                       key={post.id}
-                      className="empty-feed-card"
-                      style={{
-                        textAlign: "left",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "12px",
-                        padding: "20px",
-                        position: "relative"
-                      }}
-                    >
-                      {/* Post Header Meta Info Block Row */}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                        <div>
-                          <strong style={{ color: "#110066", fontSize: "15px" }}>{post.userName || "Alyna"}</strong>
-                          {post.taggedPerson && (
-                            <span style={{ color: "#7b3ff2", fontWeight: "600" }}> is with {post.taggedPerson}</span>
-                          )}
-                          {post.feeling && <span style={{ color: "#6b7280" }}> — feeling {post.feeling}</span>}
-                          <div style={{ fontSize: "11px", color: "#6b7280", marginTop: "2px" }}>
-                            {post.timestamp || "just now"} • {post.privacy}
-                          </div>
-                        </div>
-
-                        {/* Interactive Clickable Deletion Cross Button Trigger */}
-                        <button 
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevents clicking cross from opening creation tab route redirect box
-                            if (onDeletePost) onDeletePost(post.id);
-                          }}
-                          style={{ 
-                            background: "transparent", 
-                            border: "none", 
-                            color: "#ef4444", 
-                            fontSize: "18px", 
-                            cursor: "pointer", 
-                            fontWeight: "bold", 
-                            padding: "5px",
-                            position: "relative",
-                            zIndex: 10 // Pushes item safely past any layout bounding box overlay sheets
-                          }}
-                          title="Delete Post"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      {/* Main Message Text Body Output */}
-                      {post.text && (
-                        <p style={{ fontSize: "14px", color: "#374151", margin: 0, whiteSpace: "pre-wrap" }}>
-                          {post.text}
-                        </p>
-                      )}
-
-                      {/* RENDERS THE ATTACHED PHOTO DIRECTLY ON THE NEWSFEED TIMELINE */}
-                      {post.attachedFile && (
-                        <div
-                          style={{
-                            width: "100%",
-                            maxHeight: "360px",
-                            borderRadius: "12px",
-                            overflow: "hidden",
-                            marginTop: "4px",
-                            border: "1px solid #eeebff",
-                          }}
-                        >
-                          <img
-                            src={post.attachedFile}
-                            alt="Post Attachment"
-                            style={{
-                              width: "100%",
-                              maxHeight: "360px",
-                              objectFit: "cover",
-                              display: "block",
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
+                      post={post}
+                      isLiked={Boolean(likedPosts[post.id])}
+                      isFollowing={Boolean(followingUsers[post.userName])}
+                      onLike={() => onLikePost(post.id)}
+                      onDelete={() => onDeletePost(post.id)}
+                      onAddComment={(text) => onAddComment(post.id, text)}
+                      onToggleFriend={() => onToggleFriend(post.userName)}
+                    />
                   ))
                 )}
               </div>
