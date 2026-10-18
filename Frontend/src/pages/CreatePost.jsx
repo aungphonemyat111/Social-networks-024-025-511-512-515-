@@ -13,7 +13,7 @@ import {
   FaUserLock,
 } from "react-icons/fa";
 
-import profileImg from "../profile.png";
+import profileImg from "../assets/profile.png";
 import "./CreatePost.css";
 
 function CreatePost({ onAddPost, onNavigate }) {

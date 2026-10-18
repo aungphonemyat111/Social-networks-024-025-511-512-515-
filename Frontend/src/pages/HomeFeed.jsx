@@ -9,7 +9,7 @@ import {
 } from "react-icons/fa";
 
 import PostCard from "../components/PostCard";
-import profileImg from "../profile.png";
+import profileImg from "../assets/profile.png";
 import "./HomeFeed.css";
 
 function HomeFeed({ posts = [], onNavigate, onDeletePost, onLikePost, onAddComment, onToggleFriend, followingUsers = {}, likedPosts = {} }) {
