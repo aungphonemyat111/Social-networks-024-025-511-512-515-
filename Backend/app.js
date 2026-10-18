@@ -30,15 +30,13 @@ app.get("/", (req, res) => {
 });
 
 //Creates a POST Route (For example creating a new account)
+
 app.post("/register", (req, res) => {
-    const { fullName, email, password } = req.body;
-
-    console.log(fullName, email, password);
-
-    res.json({
-        message: "Registration data received"
+    res.status(410).json({
+        message: "Registration is handled by Firebase Authentication."
     });
 });
+
 
 
 //Starts the server and listens for requests on port 3000
