@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import Login from "./Login";
-import CreateAccount from "./CreateAccount";
+import Login from "./pages/Login";
+import CreateAccount from "./pages/CreateAccount";
 import {
   onAuthStateChanged,
   signOut,

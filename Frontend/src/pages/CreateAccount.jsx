@@ -1,14 +1,15 @@
 import { useState } from "react";
 import "./CreateAccount.css";
-import elephantImg from "./assets/elephant.png";
+import elephantImg from "../assets/elephant.png";
+
 import {
-    createUserWithEmailAndPassword,
-    updateProfile,
-    sendEmailVerification,
-    signOut
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendEmailVerification,
+  signOut,
 } from "firebase/auth";
 
-import { auth } from "./firebase";
+import { auth } from "../firebase";
 
 function CreateAccount( {goToLogin} ) {
 
