@@ -22,6 +22,7 @@ function CreatePost({ onAddPost, onNavigate }) {
   const [taggedPerson, setTaggedPerson] = useState("");
   const [feeling, setFeeling] = useState("");
   const [attachedFile, setAttachedFile] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const renderAudienceIcon = () => {
     switch (audience) {
@@ -35,43 +36,49 @@ function CreatePost({ onAddPost, onNavigate }) {
     }
   };
 
-  const handlePostSubmit = () => {
-    if (!post.trim() && !attachedFile) return alert("Please type a message or choose a photo before posting!");
 
-    const submitPostData = (imageString = null) => {
-      const newPostData = {
-        id: Date.now(),
-        userName: "Alyna",
-        timestamp: "just now",
-        text: post,
+  const handlePostSubmit = async () => {
+    if (saving) return;
+  
+    if (!post.trim()) {
+      alert("Please write a post before submitting.");
+      return;
+    }
+  
+    if (attachedFile) {
+      alert("Photo and video uploads are not available yet. Please create a text-only post for now.");
+      return;
+    }
+  
+    if (audience === "friends") {
+      alert("Friends only posts are not supported yet. Please select Public or Only Me.");
+      return;
+    }
+  
+    setSaving(true);
+  
+    try {
+      await onAddPost({
+        text: post.trim(),
         privacy: audience,
-        taggedPerson: taggedPerson || null, 
-        feeling: feeling || null, 
-        attachedFile: imageString, 
-        likes: 0,
-        comments: 0,
-      };
-
-      if (onAddPost) onAddPost(newPostData);
-      if (onNavigate) onNavigate("home");
-
+        taggedPerson: taggedPerson || null,
+        feeling: feeling || null,
+      });
+  
       setPost("");
       setTaggedPerson("");
       setFeeling("");
       setAttachedFile(null);
-    };
-
-    if (attachedFile) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        submitPostData(reader.result); 
-      };
-      reader.readAsDataURL(attachedFile);
-    } else {
-      submitPostData(null);
+  
+      // App.jsx navigates to Home Feed after saving.
+    } catch (error) {
+      console.error("Error creating post:", error);
+      alert("Could not save your post. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
-
+  
   return (
     <div className="create-post-page">
       
@@ -225,7 +232,9 @@ function CreatePost({ onAddPost, onNavigate }) {
                 >
                   Discard
                 </button>
-                <button className="post-button" onClick={handlePostSubmit}>Post</button>
+                <button className="post-button"  onClick={handlePostSubmit} disabled={saving}>  {saving ? "Posting..." : "Post"}</button>
+
+
               </div>
             </div>
 

@@ -12,8 +12,17 @@ import PostCard from "../components/PostCard";
 import profileImg from "../assets/profile.png";
 import "./HomeFeed.css";
 
-function HomeFeed({ posts = [], onNavigate, onDeletePost, onLikePost, onAddComment, onToggleFriend, followingUsers = {}, likedPosts = {} }) {
-  return (
+function HomeFeed({
+  posts = [],
+  currentUserId,
+  onNavigate,
+  onDeletePost,
+  onLikePost,
+  onAddComment,
+  onToggleFriend,
+  followingUsers = {},
+  likedPosts = {},
+}) {  return (
     <div className="create-home-feed">
       {/* Master Flex Container */}
       <div className="home-layout">
@@ -91,11 +100,14 @@ function HomeFeed({ posts = [], onNavigate, onDeletePost, onLikePost, onAddComme
                     <PostCard
                       key={post.id}
                       post={post}
+                      currentUserId={currentUserId}
                       isLiked={Boolean(likedPosts[post.id])}
                       isFollowing={Boolean(followingUsers[post.userName])}
                       onLike={() => onLikePost(post.id)}
                       onDelete={() => onDeletePost(post.id)}
-                      onAddComment={(text) => onAddComment(post.id, text)}
+                      onAddComment={(text, parentId) =>
+                        onAddComment(post.id, text, parentId)
+                      }
                       onToggleFriend={() => onToggleFriend(post.userName)}
                     />
                   ))

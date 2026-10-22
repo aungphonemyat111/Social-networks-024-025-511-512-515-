@@ -6,7 +6,14 @@ import {
   signOut,
   sendEmailVerification,
 } from "firebase/auth";
+
+import {
+  createPost,
+  subscribeToPosts,
+  deletePost,
+} from "./services/postService";
 import { auth } from "./firebase";
+import { addComment } from "./services/commentService";
 import HomeFeed from "./pages/HomeFeed";
 import CreatePost from "./pages/CreatePost";
 
@@ -31,27 +38,53 @@ useEffect(() => {
   const [likedPosts, setLikedPosts] = useState({});
   const [followingUsers, setFollowingUsers] = useState({});
 
-  const handleAddPost = (newPost) => {
-    setPosts((previous) => [
-      {
-        ...newPost,
-        // Alyna initially stores `comments: 0`; August needs a comment list.
-        comments: Array.isArray(newPost.comments) ? newPost.comments : [],
-        likes: Number(newPost.likes) || 0,
+  useEffect(() => {
+    if (!user?.uid) {
+      setPosts([]);
+      return;
+    }
+  
+    setPosts([]);
+  
+    const unsubscribe = subscribeToPosts(
+      user.uid,
+      (firestorePosts) => {
+        setPosts(firestorePosts);
       },
-      ...previous,
-    ]);
+      (error) => {
+        console.error("Error loading posts:", error);
+      }
+    );
+  
+    return () => unsubscribe();
+  }, [user?.uid]);
+
+  const handleAddPost = async (newPost) => {
+    if (!user) {
+      throw new Error("You must be logged in to post.");
+    }
+  
+    await createPost(user, newPost);
+  
     setCurrentTab("home");
   };
 
-  const handleDeletePost = (postId) => {
-    if (window.confirm("Are you sure you want to delete this post?")) {
-      setPosts((previous) => previous.filter((post) => post.id !== postId));
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) {
+      return;
+    }
+  
+    try {
+      await deletePost(postId);
+  
       setLikedPosts((previous) => {
         const next = { ...previous };
         delete next[postId];
         return next;
       });
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      alert("Could not delete this post.");
     }
   };
 
@@ -68,21 +101,15 @@ useEffect(() => {
     );
   };
 
-  const handleAddComment = (postId, text) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    setPosts((previous) =>
-      previous.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              comments: [...(Array.isArray(post.comments) ? post.comments : []),
-                { id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`, name: "You", text: trimmed }],
-            }
-          : post
-      )
-    );
+  
+  const handleAddComment = async (
+    postId,
+    text,
+    parentId = null
+  ) => {
+    await addComment(postId, user, text, parentId);
   };
+
 
   const handleToggleFriend = (userName) => {
     if (!userName) return;
@@ -162,6 +189,7 @@ if (
       {currentTab === "home" && (
         <HomeFeed
           posts={posts}
+          currentUserId={user.uid}
           onNavigate={setCurrentTab}
           onDeletePost={handleDeletePost}
           onLikePost={handleLikePost}
