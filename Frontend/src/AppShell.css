@@ -1,0 +1,154 @@
+
+.mc-app-shell {
+    min-height: 100vh;
+    background: #f7f6fb;
+  }
+  
+  .mc-account-bar {
+    height: 64px;
+    padding: 0 5%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border-bottom: 1px solid #eeebf6;
+    position: relative;
+    z-index: 100;
+  }
+  
+  .mc-account-bar-label {
+    color: #6a5c8a;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  
+  .mc-account-menu-wrap {
+    position: relative;
+  }
+  
+  .mc-account-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #ebe7f5;
+    border-radius: 24px;
+    background: #ffffff;
+    padding: 5px 12px 5px 5px;
+    cursor: pointer;
+    color: #30224e;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  
+  .mc-account-trigger:hover {
+    background: #f5f1ff;
+  }
+  
+  .mc-account-trigger img {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  .mc-menu-chevron {
+    font-size: 19px;
+    color: #7654b2;
+  }
+  
+  .mc-account-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 240px;
+    padding: 7px;
+    background: white;
+    border: 1px solid #e8e3f2;
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(40, 26, 80, 0.12);
+    z-index: 200;
+  }
+  
+  .mc-dropdown-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    border-bottom: 1px solid #eeeaf5;
+    margin-bottom: 5px;
+  }
+  
+  .mc-dropdown-heading strong {
+    color: #30224e;
+    font-size: 14px;
+  }
+  
+  .mc-dropdown-heading small {
+    color: #817990;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+  
+  .mc-account-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 11px 12px;
+    text-align: left;
+    background: transparent;
+    color: #352953;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  
+  .mc-account-dropdown button:hover {
+    background: #f3efff;
+  }
+  
+  .mc-account-dropdown .mc-logout-option {
+    color: #bd3847;
+  }
+  
+  .mc-loading-page,
+  .mc-verification-page,
+  .mc-coming-soon {
+    max-width: 600px;
+    margin: 80px auto;
+    padding: 30px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+  }
+  
+  .mc-verification-page button,
+  .mc-coming-soon button {
+    margin: 8px;
+    padding: 10px 16px;
+    border: 1px solid #d9c9f3;
+    border-radius: 8px;
+    background: #f0e9ff;
+    color: #53339b;
+    cursor: pointer;
+  }
+  
+  @media (max-width: 600px) {
+    .mc-account-bar {
+      padding: 0 16px;
+    }
+  
+    .mc-account-bar-label {
+      font-size: 11px;
+    }
+  
+    .mc-account-trigger {
+      max-width: 165px;
+    }
+  
+    .mc-account-trigger span:not(.mc-menu-chevron) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+  

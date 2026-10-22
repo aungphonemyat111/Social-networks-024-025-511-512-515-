@@ -1,0 +1,338 @@
+
+.mc-student-profile {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+    font-family: Arial, sans-serif;
+    color: #2d2542;
+  }
+  
+  .mc-profile-back {
+    margin-bottom: 18px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #6844ad;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  
+  .mc-profile-card {
+    background: #fff;
+    border: 1px solid #ece8f5;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  
+  .mc-profile-cover {
+    height: 215px;
+    background:
+      linear-gradient(
+        120deg,
+        rgba(106, 68, 180, 0.75),
+        rgba(197, 171, 240, 0.3)
+      ),
+      linear-gradient(140deg, #9d86d0, #ded1f8);
+    background-size: cover;
+    background-position: center;
+  }
+  
+  .mc-profile-body {
+    padding: 0 28px 28px;
+  }
+  
+  .mc-profile-intro {
+    display: flex;
+    align-items: flex-end;
+    gap: 18px;
+    margin-top: -24px;
+  }
+  
+  .mc-profile-avatar {
+    width: 108px;
+    height: 108px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 5px solid white;
+    background: #f1edf7;
+    object-fit: cover;
+  }
+  
+  .mc-profile-heading {
+    flex: 1;
+    min-width: 0;
+    padding-bottom: 10px;
+  }
+  
+  .mc-profile-heading h1 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 24px;
+    line-height: 1.3;
+    margin: 0 0 6px;
+    color: #281a48;
+  }
+  
+  .mc-profile-nickname {
+    font-size: 17px;
+    font-weight: 500;
+    color: #8063ac;
+  }
+  
+  .mc-profile-heading p {
+    font-size: 14px;
+    color: #81758f;
+    margin: 0;
+  }
+  
+  .mc-profile-edit,
+  .mc-profile-save {
+    padding: 10px 17px;
+    border: none;
+    border-radius: 9px;
+    background: #7144bb;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  
+  .mc-profile-edit {
+    margin-bottom: 8px;
+  }
+  
+  .mc-profile-edit:hover,
+  .mc-profile-save:hover {
+    background: #5c349c;
+  }
+  
+  .mc-profile-major {
+    margin: 21px 0 8px;
+    color: #6844ad;
+    font-size: 14px;
+  }
+  
+  .mc-profile-bio {
+    margin: 12px 0 22px;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+  
+  .mc-profile-details {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding-top: 18px;
+    border-top: 1px solid #efeaf7;
+    color: #766987;
+    font-size: 14px;
+  }
+  
+  .mc-profile-details strong {
+    color: #332152;
+  }
+  
+  .mc-profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 570px;
+    margin-top: 25px;
+  }
+  
+  .mc-profile-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: #4b3d68;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  
+  .mc-profile-form input,
+  .mc-profile-form textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dfd8ec;
+    border-radius: 9px;
+    background: #fff;
+    color: #302343;
+    font: inherit;
+    font-size: 14px;
+  }
+  
+  .mc-profile-form input:disabled {
+    background: #f5f3f8;
+    color: #716885;
+  }
+  
+  .mc-profile-form input:focus,
+  .mc-profile-form textarea:focus {
+    outline: 2px solid #b7a0eb;
+    border-color: #8b68ca;
+  }
+  
+  .mc-profile-form small {
+    color: #9489a1;
+    font-size: 11px;
+    font-weight: normal;
+  }
+  
+  .mc-profile-save {
+    align-self: flex-start;
+  }
+  
+  .mc-profile-save:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+  
+  /* Full post feed */
+  .mc-profile-posts {
+    margin-top: 25px;
+  }
+  
+  .mc-profile-posts-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  
+  .mc-profile-posts-heading h2 {
+    margin: 0;
+    color: #30204f;
+    font-size: 20px;
+  }
+  
+  .mc-profile-posts-heading span {
+    color: #857895;
+    font-size: 13px;
+  }
+  
+  .mc-profile-post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  
+  .mc-profile-post-list .mc-post-card {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+  }
+  
+  .mc-profile-empty {
+    padding: 35px 20px;
+    border: 1px solid #ece8f5;
+    border-radius: 14px;
+    background: white;
+    color: #81758f;
+    text-align: center;
+    font-size: 14px;
+  }
+  
+  /* Responsive */
+  @media (max-width: 650px) {
+    .mc-student-profile {
+      padding: 16px 12px 40px;
+    }
+  
+    .mc-profile-cover {
+      height: 160px;
+    }
+  
+    .mc-profile-body {
+      padding: 0 16px 22px;
+    }
+  
+    .mc-profile-intro {
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: -35px;
+    }
+  
+    .mc-profile-avatar {
+      width: 90px;
+      height: 90px;
+    }
+  
+    .mc-profile-heading h1 {
+      font-size: 19px;
+    }
+  
+    .mc-profile-nickname {
+      font-size: 14px;
+    }
+  
+    .mc-profile-edit {
+      margin-left: auto;
+    }
+  
+    .mc-profile-details {
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+  }
+
+  /* Improve profile typography */
+.mc-student-profile {
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    letter-spacing: 0.2px;
+    line-height: 1.6;
+  }
+  
+  .mc-profile-heading h1 {
+    letter-spacing: 0.4px;
+    line-height: 1.4;
+  }
+  
+  .mc-profile-nickname {
+    margin-left: 4px;
+    letter-spacing: 0.3px;
+  }
+  
+  .mc-profile-heading p,
+  .mc-profile-major,
+  .mc-profile-bio {
+    letter-spacing: 0.3px;
+    line-height: 1.8;
+  }
+  
+  .mc-profile-details {
+    letter-spacing: 0.3px;
+    line-height: 1.7;
+  }
+  
+  .mc-profile-form label {
+    letter-spacing: 0.2px;
+    line-height: 1.6;
+  }
+  
+  /* CMU email display */
+.mc-profile-email {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border: 1px solid #e8e1f5;
+    border-radius: 10px;
+    background: #f8f6fc;
+    color: #473663;
+    font-size: 13px;
+    letter-spacing: 0.2px;
+    overflow-wrap: anywhere;
+  }
+  
+  .mc-profile-email-label {
+    font-weight: 700;
+    color: #7043ba;
+  }

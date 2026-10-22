@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   FaHome,
@@ -9,77 +10,124 @@ import {
 } from "react-icons/fa";
 
 import PostCard from "../components/PostCard";
-import profileImg from "../assets/profile.png";
+import defaultProfile from "../assets/profile.png";
 import "./HomeFeed.css";
+import "./HomeFeedExtras.css";
 
-function HomeFeed({
+export default function HomeFeed({
   posts = [],
   currentUserId,
+  currentProfile,
   onNavigate,
+  onOpenProfile,
   onDeletePost,
-  onLikePost,
   onAddComment,
   onToggleFriend,
   followingUsers = {},
-  likedPosts = {},
-}) {  return (
+}) {
+  const myAvatar =
+    currentProfile?.photoURL || defaultProfile;
+
+  return (
     <div className="create-home-feed">
-      {/* Master Flex Container */}
       <div className="home-layout">
-        
-        {/* Left Hand Navigation Panel Sidebar */}
-        <div className="sidebar">
+        <aside className="sidebar">
           <div className="logo">
             <FaUsers />
             <span>MORCHORCONNECT</span>
           </div>
+
           <ul>
-            <li className="active" onClick={() => onNavigate && onNavigate("home")}>
+            <li
+              className="active"
+              onClick={() => onNavigate("home")}
+            >
               <FaHome />
               <span>Home</span>
             </li>
-            <li onClick={() => onNavigate && onNavigate("create")}>
+
+            <li onClick={() => onNavigate("create")}>
               <FaPlusCircle />
               <span>Create Post</span>
             </li>
-            <li onClick={() => onNavigate && onNavigate("profile")}>
+
+            <li
+              onClick={() => onOpenProfile(currentUserId)}
+            >
               <FaUser />
               <span>Profile</span>
             </li>
-            <li onClick={() => onNavigate && onNavigate("message")}>
+
+            <li onClick={() => onNavigate("message")}>
               <FaEnvelope />
               <span>Messages</span>
             </li>
           </ul>
-        </div>
+        </aside>
 
-        {/* Right Content Workspace Workspace Layout Panel */}
         <div className="home-content">
-          
-          {/* Top Integrated Search Navigation Bar Banner Row */}
           <div className="navbar">
             <div className="search-bar">
               <FaSearch />
-              <input type="text" placeholder="Search posts, people, or events..." />
+              <input
+                type="text"
+                placeholder="Search posts, people, or events..."
+              />
             </div>
 
             <div className="nav-right">
               <div className="avator-small">
-                <img src={profileImg} alt="User Profile" onClick={() => onNavigate && onNavigate("profile")} />
+                <button
+                  type="button"
+                  onClick={() =>
+                    onOpenProfile(currentUserId)
+                  }
+                  aria-label="View my profile"
+                  style={{
+                    padding: 0,
+                    border: "none",
+                    background: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  <img
+                    src={myAvatar}
+                    alt="My profile"
+                  />
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Timeline Feed Container Frame Layout */}
           <div className="main-feed-grid">
             <div className="feed-stream">
-              
-              {/* Quick Trigger Posting Entry Box */}
-              <div className="quick-post-box" onClick={() => onNavigate && onNavigate("create")}>
+              <div
+                className="quick-post-box"
+                onClick={() => onNavigate("create")}
+              >
                 <div className="quick-post-input-row">
-                  <div className="avatar-wrapper" >
-                    <img src={profileImg} alt="User Profile" />
+                  <div className="avatar-wrapper">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenProfile(currentUserId);
+                      }}
+                      aria-label="Open my profile"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <img
+                        src={myAvatar}
+                        alt="Your profile"
+                      />
+                    </button>
                   </div>
+
                   <input
                     type="text"
                     placeholder="What's on your mind?"
@@ -89,11 +137,13 @@ function HomeFeed({
                 </div>
               </div>
 
-              {/* Dynamic Post Feed Map Generator Container */}
               <div className="posts-container">
                 {posts.length === 0 ? (
                   <div className="empty-feed-card">
-                    <p>No posts on your timeline yet. Be the first to start a discussion!</p>
+                    <p>
+                      No posts on your timeline yet.
+                      Be the first to start a discussion!
+                    </p>
                   </div>
                 ) : (
                   posts.map((post) => (
@@ -101,26 +151,31 @@ function HomeFeed({
                       key={post.id}
                       post={post}
                       currentUserId={currentUserId}
-                      isLiked={Boolean(likedPosts[post.id])}
-                      isFollowing={Boolean(followingUsers[post.userName])}
-                      onLike={() => onLikePost(post.id)}
-                      onDelete={() => onDeletePost(post.id)}
-                      onAddComment={(text, parentId) =>
-                        onAddComment(post.id, text, parentId)
+                      onOpenProfile={onOpenProfile}
+                      isFollowing={Boolean(
+                        followingUsers[post.userName]
+                      )}
+                      onDelete={() =>
+                        onDeletePost(post.id)
                       }
-                      onToggleFriend={() => onToggleFriend(post.userName)}
+                      onAddComment={(text, parentId) =>
+                        onAddComment(
+                          post.id,
+                          text,
+                          parentId
+                        )
+                      }
+                      onToggleFriend={() =>
+                        onToggleFriend(post.userName)
+                      }
                     />
                   ))
                 )}
               </div>
-
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
 }
-
-export default HomeFeed;
