@@ -11,38 +11,79 @@ import {
   } from "firebase/firestore";
   
   import { db } from "../firebase";
+  import { uploadPostImages } from "./imageService";
   
   const postsCollection = collection(db, "posts");
   
   // Save a new text post.
-  export async function createPost(user, postData) {
-    if (!user) {
-      throw new Error("Please log in first.");
-    }
+
   
-    const text = postData.text?.trim();
-  
-    if (!text || text.length > 5000) {
-      throw new Error("Post text must be 1–5000 characters.");
-    }
-  
-    if (!["public", "private"].includes(postData.privacy)) {
-      throw new Error("This audience option is not available yet.");
-    }
-  
-    return addDoc(postsCollection, {
-      authorId: user.uid,
-      userName: user.displayName || user.email?.split("@")[0] || "User",
-      text,
-      privacy: postData.privacy,
-      taggedPerson: postData.taggedPerson || null,
-      feeling: postData.feeling || null,
-      attachedFile: null,
-      likes: 0,
-      comments: [],
-      createdAt: serverTimestamp(),
-    });
+export async function createPost(user, postData) {
+  if (!user) {
+    throw new Error("Please log in first.");
   }
+
+  const text = (postData.text || "").trim();
+  const privacy = postData.privacy;
+
+  // Supports both the old single-photo form
+  // and the new multiple-photo form.
+  const files = Array.from(
+    postData.attachedFiles ||
+    (postData.attachedFile ? [postData.attachedFile] : [])
+  );
+
+  if (!["public", "private"].includes(privacy)) {
+    throw new Error("This audience option is not supported yet.");
+  }
+
+  if (!text && files.length === 0) {
+    throw new Error("Please write something or select a photo.");
+  }
+
+  if (text.length > 5000) {
+    throw new Error("Post text must be 5000 characters or fewer.");
+  }
+
+  if (files.length > 5) {
+    throw new Error("You can upload up to 5 photos per post.");
+  }
+
+  // Cloudinary photos are public.
+  if (files.length > 0 && privacy !== "public") {
+    throw new Error("Photo posts must be Public for now.");
+  }
+
+  let imageUrls = [];
+
+  if (files.length > 0) {
+    imageUrls = await uploadPostImages(files);
+  }
+
+  return addDoc(postsCollection, {
+    authorId: user.uid,
+    userName:
+      user.displayName ||
+      user.email?.split("@")[0] ||
+      "User",
+    text,
+    privacy,
+    taggedPerson: postData.taggedPerson || null,
+    feeling: postData.feeling || null,
+
+    // New: all uploaded photos
+    images: imageUrls,
+
+    // Keep compatibility with the existing PostCard
+    attachedFile: imageUrls[0] || null,
+
+    likes: 0,
+    comments: [],
+    createdAt: serverTimestamp(),
+  });
+}
+
+  
   
   // Listen to public posts and the user's own posts.
   export function subscribeToPosts(userId, onPosts, onError) {

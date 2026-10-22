@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import {
+import React, { useEffect, useState } from "react";import {
   FaHome,
   FaUser,
   FaPlusCircle,
@@ -21,8 +20,31 @@ function CreatePost({ onAddPost, onNavigate }) {
   const [audience, setAudience] = useState("private");
   const [taggedPerson, setTaggedPerson] = useState("");
   const [feeling, setFeeling] = useState("");
-  const [attachedFile, setAttachedFile] = useState(null);
+  const [attachedFiles, setAttachedFiles] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
   const [saving, setSaving] = useState(false);
+
+
+useEffect(() => {
+  const urls = attachedFiles.map((file) =>
+    URL.createObjectURL(file)
+  );
+
+  setPreviewUrls(urls);
+
+  return () => {
+    urls.forEach((url) => URL.revokeObjectURL(url));
+  };
+}, [attachedFiles]);
+
+const removePhoto = (indexToRemove) => {
+  if (saving) return;
+
+  setAttachedFiles((previous) =>
+    previous.filter((_, index) => index !== indexToRemove)
+  );
+};
+
 
   const renderAudienceIcon = () => {
     switch (audience) {
@@ -37,21 +59,23 @@ function CreatePost({ onAddPost, onNavigate }) {
   };
 
 
+  
+
   const handlePostSubmit = async () => {
     if (saving) return;
   
-    if (!post.trim()) {
-      alert("Please write a post before submitting.");
-      return;
-    }
-  
-    if (attachedFile) {
-      alert("Photo and video uploads are not available yet. Please create a text-only post for now.");
+    if (!post.trim() && attachedFiles.length === 0) {
+      alert("Please write a post or choose a photo.");
       return;
     }
   
     if (audience === "friends") {
-      alert("Friends only posts are not supported yet. Please select Public or Only Me.");
+      alert("Friends only posts are not supported yet.");
+      return;
+    }
+  
+    if (attachedFiles.length > 0 && audience !== "public") {
+      alert("Please select Public for photo posts.");
       return;
     }
   
@@ -63,21 +87,24 @@ function CreatePost({ onAddPost, onNavigate }) {
         privacy: audience,
         taggedPerson: taggedPerson || null,
         feeling: feeling || null,
+        attachedFiles,
       });
   
       setPost("");
       setTaggedPerson("");
       setFeeling("");
-      setAttachedFile(null);
+      setAttachedFiles([]);
   
       // App.jsx navigates to Home Feed after saving.
     } catch (error) {
       console.error("Error creating post:", error);
-      alert("Could not save your post. Please try again.");
+      alert(error.message || "Could not create your post.");
     } finally {
       setSaving(false);
     }
   };
+  
+
   
   return (
     <div className="create-post-page">
@@ -141,37 +168,117 @@ function CreatePost({ onAddPost, onNavigate }) {
                 />
               </div>
 
-              {attachedFile && (
-                <div style={{ position: "relative", width: "100%", maxWidth: "500px", maxHeight: "320px", borderRadius: "14px", overflow: "hidden", border: "1px solid #e1dbff", marginLeft: "68px" }}>
-                  <img 
-                    src={URL.createObjectURL(attachedFile)} 
-                    alt="Upload Preview" 
-                    style={{ width: "100%", maxHeight: "320px", objectFit: "cover", display: "block" }} 
-                  />
-                  <button 
-                    type="button" 
-                    onClick={() => setAttachedFile(null)}
-                    style={{ position: "absolute", top: "12px", right: "12px", background: "rgba(17, 0, 102, 0.75)", color: "white", border: "none", borderRadius: "50%", width: "26px", height: "26px", cursor: "pointer", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}
-                  >
-                    ✕
-                  </button>
+              
+            {attachedFiles.length > 0 && (
+              <div style={{ width: "100%", marginTop: "12px" }}>
+                <p style={{ fontSize: "14px", color: "#666" }}>
+                  {attachedFiles.length} of 5 photos selected
+                </p>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+                    gap: "10px",
+                    marginTop: "10px",
+                  }}
+                >
+                  {previewUrls.map((url, index) => (
+                    <div
+                      key={url}
+                      style={{
+                        position: "relative",
+                        overflow: "hidden",
+                        borderRadius: "10px",
+                        background: "#f1eef7",
+                      }}
+                    >
+                      <img
+                        src={url}
+                        alt={`Selected photo ${index + 1}`}
+                        style={{
+                          width: "100%",
+                          height: "160px",
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => removePhoto(index)}
+                        aria-label={`Remove photo ${index + 1}`}
+                        style={{
+                          position: "absolute",
+                          top: "8px",
+                          right: "8px",
+                          background: "rgba(0,0,0,0.7)",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "50%",
+                          width: "28px",
+                          height: "28px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
+
             </div>
 
             <div className="post-options">
              <label className="post-option">
               <FaImage className="image" />
-              <span>Photo/Video</span>
-              <input type="file" accept="image/*, video/*" style={{display: "none"}}
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if(file){
-                          setAttachedFile(file);
-                          console.log("Selected file:", file);
-                        }
-                      }}
-                      />
+              <span>Photo</span>
+
+
+              <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              disabled={saving}
+              style={{ display: "none" }}
+              onChange={(event) => {
+                const selected = Array.from(event.target.files || []);
+
+                if (attachedFiles.length + selected.length > 5) {
+                  alert("You can select a maximum of 5 photos.");
+                  event.target.value = "";
+                  return;
+                }
+
+                const validTypes = [
+                  "image/jpeg",
+                  "image/png",
+                  "image/webp",
+                ];
+
+                for (const file of selected) {
+                  if (!validTypes.includes(file.type)) {
+                    alert("Only JPG, PNG, and WebP photos are supported.");
+                    event.target.value = "";
+                    return;
+                  }
+
+                  if (file.size > 5 * 1024 * 1024) {
+                    alert("Each photo must be smaller than 5 MB.");
+                    event.target.value = "";
+                    return;
+                  }
+                }
+
+                setAttachedFiles((previous) => [...previous, ...selected]);
+
+                event.target.value = "";
+              }}
+              />
+
              </label>
 
              <label
@@ -223,7 +330,7 @@ function CreatePost({ onAddPost, onNavigate }) {
                       setPost(""); 
                       setTaggedPerson(""); 
                       setFeeling("");      
-                      setAttachedFile(null); 
+                      setAttachedFiles([]); 
                       if (onNavigate) {
                         onNavigate("home");
                       }
