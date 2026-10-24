@@ -9,7 +9,13 @@ import {
   signOut,
 } from "firebase/auth";
 
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
+
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
 function CreateAccount( {goToLogin} ) {
 
@@ -63,6 +69,16 @@ function CreateAccount( {goToLogin} ) {
             await updateProfile(userCredential.user, {
                 displayName: cleanName
             });
+
+            // Create the student's Firestore profile automatically.
+            await setDoc(
+                doc(db, "users", userCredential.user.uid),
+                {
+                    fullName: cleanName,
+                    createdAt: serverTimestamp(),
+                },
+                { merge: true }
+            );
     
             // Send email verification link
             await sendEmailVerification(userCredential.user);

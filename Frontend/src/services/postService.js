@@ -68,8 +68,23 @@ export async function createPost(user, postData) {
       "User",
     text,
     privacy,
+
     taggedPerson: postData.taggedPerson || null,
-    feeling: postData.feeling || null,
+    taggedUserId: postData.taggedUserId || null,
+    tagType: postData.taggedUserId
+      ? postData.tagType === "mention"
+        ? "mention"
+        : "tag"
+      : null,
+    
+    // Multiple tagged and mentioned students.
+    taggedUserIds: [
+      ...new Set(postData.taggedUserIds || []),
+    ],
+    mentionedUserIds: [
+      ...new Set(postData.mentionedUserIds || []),
+    ],
+        feeling: postData.feeling || null,
 
     // New: all uploaded photos
     images: imageUrls,

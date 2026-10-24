@@ -10,6 +10,12 @@ import {
 import { db } from "../firebase";
 import { uploadPostImage } from "../services/imageService";
 import PostCard from "../components/PostCard";
+import {
+    subscribeToFollow,
+    subscribeToFollowCounts,
+    subscribeToFollowUsers,
+    setFollow,
+  } from "../services/followService";
 import defaultProfile from "../assets/profile.png";
 import "./StudentProfile.css";
 
@@ -28,6 +34,16 @@ export default function StudentProfile({
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followSaving, setFollowSaving] = useState(false);
+  const [activeFollowList, setActiveFollowList] = useState(null);
+  const [followPeople, setFollowPeople] = useState([]);
+  const [followListLoading, setFollowListLoading] = useState(false);
+  const [followListError, setFollowListError] = useState("");
+  const [followCounts, setFollowCounts] = useState({
+  followers: 0,
+  following: 0,
+});
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
 
@@ -70,6 +86,78 @@ export default function StudentProfile({
 
     return () => unsubscribe();
   }, [profileUserId]);
+
+  // Live follower and following counts.
+useEffect(() => {
+    setFollowCounts({
+      followers: 0,
+      following: 0,
+    });
+  
+    return subscribeToFollowCounts(
+      profileUserId,
+      setFollowCounts,
+      (error) => {
+        console.error("Error loading follow counts:", error);
+      }
+    );
+  }, [profileUserId]);
+  
+  // Check whether the logged-in student follows this profile.
+  useEffect(() => {
+    setIsFollowing(false);
+  
+    if (isOwner) return;
+  
+    return subscribeToFollow(
+      currentUser.uid,
+      profileUserId,
+      setIsFollowing,
+      (error) => {
+        console.error("Error checking follow status:", error);
+      }
+    );
+  }, [currentUser.uid, profileUserId, isOwner]);
+
+  // Load the Followers or Following list when opened.
+useEffect(() => {
+  if (!activeFollowList) return;
+
+  setFollowPeople([]);
+  setFollowListLoading(true);
+  setFollowListError("");
+
+  return subscribeToFollowUsers(
+    profileUserId,
+    activeFollowList,
+    (students) => {
+      setFollowPeople(students);
+      setFollowListLoading(false);
+    },
+    (error) => {
+      console.error("Could not load follow list:", error);
+      setFollowListError("Could not load students.");
+      setFollowListLoading(false);
+    }
+  );
+}, [profileUserId, activeFollowList]);
+
+  // Close the popup when Escape is pressed.
+  useEffect(() => {
+    if (!activeFollowList) return;
+
+    const handleEscape = (event) => {ß
+      if (event.key === "Escape") {
+        setActiveFollowList(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [activeFollowList]);
 
   // Preview a new profile picture before saving.
   useEffect(() => {
@@ -126,6 +214,25 @@ export default function StudentProfile({
     }));
   };
 
+  const handleFollowClick = async () => {
+    if (isOwner || followSaving) return;
+  
+    setFollowSaving(true);
+  
+    try {
+      await setFollow(
+        currentUser.uid,
+        profileUserId,
+        !isFollowing
+      );
+    } catch (error) {
+      console.error("Error updating follow:", error);
+      alert("Could not update follow. Please try again.");
+    } finally {
+      setFollowSaving(false);
+    }
+  };
+
   const handleSave = async (event) => {
     event.preventDefault();
 
@@ -169,6 +276,7 @@ export default function StudentProfile({
         updatedAt: serverTimestamp(),
       };
 
+      
       // If no real name was saved in Firestore yet,
       // preserve the registered name separately.
       if (
@@ -260,6 +368,23 @@ export default function StudentProfile({
                 {editing ? "Cancel" : "Edit Profile"}
               </button>
             )}
+
+            {!isOwner && (
+            <button
+                type="button"
+                className={`mc-profile-follow ${
+                isFollowing ? "mc-profile-following" : ""
+                }`}
+                onClick={handleFollowClick}
+                disabled={followSaving}
+            >
+                {followSaving
+                ? "Saving..."
+                : isFollowing
+                    ? "✓ Following"
+                    : "+ Follow"}
+            </button>
+            )}
           </div>
 
           {!editing && (
@@ -279,17 +404,26 @@ export default function StudentProfile({
                 )}
 
                 <div className="mc-profile-details">
+                  <span>
+                    <strong>{studentPosts.length}</strong> Posts
+                  </span>
 
+                  <button
+                    type="button"
+                    className="mc-follow-count-button"
+                    onClick={() => setActiveFollowList("followers")}
+                  >
+                    <strong>{followCounts.followers}</strong> Followers
+                  </button>
 
-                <span>
-                  <strong>{studentPosts.length}</strong>
-                  {" "}Posts
-                </span>
-
-                <span>
-                  CMU student community
-                </span>
-              </div>
+                  <button
+                    type="button"
+                    className="mc-follow-count-button"
+                    onClick={() => setActiveFollowList("following")}
+                  >
+                    <strong>{followCounts.following}</strong> Following
+                  </button>
+                </div>
             </>
           )}
 
@@ -425,6 +559,115 @@ export default function StudentProfile({
           </div>
         )}
       </section>
+        
+      {activeFollowList && (
+          <div
+            className="mc-follow-modal-backdrop"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) {
+                setActiveFollowList(null);
+              }
+            }}
+          >
+            <section
+              className="mc-follow-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="mc-follow-modal-title"
+            >
+              <div className="mc-follow-modal-header">
+                <h2 id="mc-follow-modal-title">
+                  {activeFollowList === "followers"
+                    ? "Followers"
+                    : "Following"}
+                </h2>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveFollowList(null)}
+                  aria-label="Close list"
+                >
+                  ×
+                </button>
+              </div>
+
+              {followListLoading ? (
+                <p className="mc-follow-list-message">
+                  Loading students...
+                </p>
+              ) : followListError ? (
+                <p className="mc-follow-list-message">
+                  {followListError}
+                </p>
+              ) : followPeople.length === 0 ? (
+                <p className="mc-follow-list-message">
+                  {activeFollowList === "followers"
+                    ? "No followers yet."
+                    : "Not following anyone yet."}
+                </p>
+              ) : (
+                <div className="mc-follow-user-list">
+                  {followPeople.map((student) => {
+                    const realName =
+                      student.fullName ||
+                      student.displayName ||
+                      student.realName ||
+                      student.name ||
+                      "CMU Student";
+
+                    const nickname = (student.nickname || "").trim();
+
+                    const studyInfo = [
+                      student.faculty,
+                      student.major,
+                    ].filter(Boolean).join(" | ");
+
+                    return (
+                      <button
+                        type="button"
+                        className="mc-follow-user"
+                        key={student.uid}
+                        onClick={() => {
+                          setActiveFollowList(null);
+                          onOpenProfile(student.uid);
+                        }}
+                      >
+                        <img
+                          src={student.photoURL || defaultProfile}
+                          alt=""
+                          onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = defaultProfile;
+                          }}
+                        />
+
+                        <div className="mc-follow-user-info">
+                          <strong>
+                            {realName}
+                            {nickname &&
+                              nickname.toLowerCase() !==
+                                realName.toLowerCase() && (
+                                <span> ({nickname})</span>
+                              )}
+                          </strong>
+
+                          <small>
+                            {studyInfo || "CMU Student"}
+                          </small>
+                        </div>
+
+                        <span className="mc-follow-view-profile">
+                          View →
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+      
     </div>
   );
 }

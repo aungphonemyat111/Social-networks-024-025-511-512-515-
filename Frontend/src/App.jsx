@@ -1,11 +1,11 @@
-
 import React, { useEffect, useState } from "react";
 import {
   onAuthStateChanged,
   signOut,
   sendEmailVerification,
 } from "firebase/auth";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
+import { FaRegCommentDots } from "react-icons/fa";
 
 import { auth, db } from "./firebase";
 import Login from "./pages/Login";
@@ -13,7 +13,9 @@ import CreateAccount from "./pages/CreateAccount";
 import HomeFeed from "./pages/HomeFeed";
 import CreatePost from "./pages/CreatePost";
 import StudentProfile from "./pages/StudentProfile";
-
+import SidebarNav from "./components/SidebarNav";
+import NotificationBell from "./components/NotificationBell";
+import { createNotification } from "./services/notificationService";
 import {
   createPost,
   subscribeToPosts,
@@ -21,6 +23,7 @@ import {
 } from "./services/postService";
 import { addComment } from "./services/commentService";
 
+import morchorLogo from "./assets/morchor-logo.png";
 import defaultProfile from "./assets/profile.png";
 import "./AppShell.css";
 
@@ -30,9 +33,14 @@ export default function App() {
   const [authPage, setAuthPage] = useState("login");
 
   const [currentTab, setCurrentTab] = useState("home");
+  const [focusedPostId, setFocusedPostId] = useState(null);
+  const [focusedCommentId, setFocusedCommentId] = useState(null);
   const [profileUserId, setProfileUserId] = useState(null);
   const [ownProfile, setOwnProfile] = useState(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState(null);
+  const [deletingPost, setDeletingPost] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const [posts, setPosts] = useState([]);
   const [followingUsers, setFollowingUsers] = useState({});
@@ -44,6 +52,48 @@ export default function App() {
     });
   }, []);
 
+  // Fill in missing real names for existing accounts.
+  useEffect(() => {
+    if (!user?.uid || !user.displayName?.trim()) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncFullName = async () => {
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const snapshot = await getDoc(userRef);
+
+        if (cancelled) return;
+
+        const existingName = snapshot.data()?.fullName;
+
+        // Never overwrite a name that already exists.
+        if (
+          typeof existingName === "string" &&
+          existingName.trim()
+        ) {
+          return;
+        }
+
+        await setDoc(
+          userRef,
+          { fullName: user.displayName.trim() },
+          { merge: true }
+        );
+      } catch (error) {
+        console.error("Could not sync full name:", error);
+      }
+    };
+
+    syncFullName();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid, user?.displayName]);
+
   // Current student's profile.
   useEffect(() => {
     if (!user?.uid) {
@@ -54,9 +104,7 @@ export default function App() {
     return onSnapshot(
       doc(db, "users", user.uid),
       (snapshot) => {
-        setOwnProfile(
-          snapshot.exists() ? snapshot.data() : null
-        );
+        setOwnProfile(snapshot.exists() ? snapshot.data() : null);
       },
       (error) => {
         console.error("Could not load profile:", error);
@@ -73,20 +121,19 @@ export default function App() {
 
     setPosts([]);
 
-    return subscribeToPosts(
-      user.uid,
-      setPosts,
-      (error) => {
-        console.error("Could not load posts:", error);
-      }
-    );
+    return subscribeToPosts(user.uid, setPosts, (error) => {
+      console.error("Could not load posts:", error);
+    });
   }, [user?.uid]);
 
   const navigate = (tab) => {
+    setFocusedPostId(null);
+    setFocusedCommentId(null);
+  
     if (tab === "profile") {
       setProfileUserId(user.uid);
     }
-
+  
     setCurrentTab(tab);
     setAccountMenuOpen(false);
   };
@@ -98,34 +145,152 @@ export default function App() {
     setCurrentTab("profile");
     setAccountMenuOpen(false);
   };
+  const openPost = (postId, commentId = null) => {
+    if (!postId) return;
+
+    setFocusedPostId(postId);
+    setFocusedCommentId(commentId);
+    setCurrentTab("home");
+    setAccountMenuOpen(false);
+  };
 
   const handleAddPost = async (postData) => {
     if (!user) {
       throw new Error("Please log in first.");
     }
 
-    await createPost(user, postData);
+    // Save the post before sending any notifications.
+    const savedPost = await createPost(user, postData);
+
+    // Support the new multi-select composer and older single-tag drafts.
+    const rawTags = postData.taggedUserIds ||
+      (postData.taggedUserId && postData.tagType !== "mention"
+        ? [postData.taggedUserId]
+        : []);
+    const rawMentions = postData.mentionedUserIds ||
+      (postData.taggedUserId && postData.tagType === "mention"
+        ? [postData.taggedUserId]
+        : []);
+
+    const taggedIds = [...new Set(rawTags)].filter(
+      (id) => id && id !== user.uid
+    );
+    const mentionedIds = [...new Set(rawMentions)].filter(
+      (id) => id && id !== user.uid && !taggedIds.includes(id)
+    );
+
+    if (savedPost?.id && postData.privacy === "public") {
+      const recipients = [
+        ...taggedIds.map((recipientId) => ({ recipientId, type: "tag" })),
+        ...mentionedIds.map((recipientId) => ({ recipientId, type: "mention" })),
+      ];
+
+      // Each failure is isolated; a saved post is never rolled back.
+      await Promise.all(
+        recipients.map(async ({ recipientId, type }) => {
+          try {
+            await createNotification({
+              recipientId,
+              actorId: user.uid,
+              type,
+              postId: savedPost.id,
+            });
+          } catch (error) {
+            console.error(`Could not send ${type} notification:`, error);
+          }
+        })
+      );
+    }
+
     navigate("home");
   };
 
-  const handleDeletePost = async (postId) => {
-    if (!window.confirm("Delete this post?")) return;
+  const handleDeletePost = (postId) => {
+    setPostToDelete(postId);
+    setDeleteError("");
+  };
+
+  const confirmDeletePost = async () => {
+    if (!postToDelete || deletingPost) return;
+
+    setDeletingPost(true);
+    setDeleteError("");
 
     try {
-      await deletePost(postId);
+      await deletePost(postToDelete);
+      setPostToDelete(null);
     } catch (error) {
       console.error("Could not delete post:", error);
-      alert("Could not delete this post.");
+      setDeleteError("Could not delete this post. Please try again.");
+    } finally {
+      setDeletingPost(false);
     }
   };
 
-  const handleAddComment = async (
+ 
+const handleAddComment = async (
+  postId,
+  text,
+  parentId = null
+) => {
+  if (!user) {
+    throw new Error("Please log in first.");
+  }
+
+  // Save the comment or reply first.
+  const savedComment = await addComment(
     postId,
+    user,
     text,
-    parentId = null
-  ) => {
-    await addComment(postId, user, text, parentId);
-  };
+    parentId
+  );
+
+  // Notification failures must not undo a saved comment.
+  try {
+    const postSnapshot = await getDoc(
+      doc(db, "posts", postId)
+    );
+
+    if (!postSnapshot.exists()) return;
+
+    const postAuthorId = postSnapshot.data().authorId;
+
+    let recipientId = postAuthorId;
+    let notificationType = "comment";
+
+    // For replies, notify the author of the
+    // comment being replied to.
+    if (parentId) {
+      const parentSnapshot = await getDoc(
+        doc(db, "posts", postId, "comments", parentId)
+      );
+
+      if (!parentSnapshot.exists()) return;
+
+      recipientId = parentSnapshot.data().authorId;
+      notificationType = "reply";
+    }
+
+    // No notification for your own actions.
+    if (!recipientId || recipientId === user.uid) {
+      return;
+    }
+
+    await createNotification({
+      recipientId,
+      actorId: user.uid,
+      type: notificationType,
+      postId,
+      commentId: savedComment.id,
+    });
+  } catch (error) {
+    console.error(
+      "Comment saved, but notification failed:",
+      error
+    );
+  }
+};
+
 
   // Temporary until our Firestore follow system is ready.
   const handleToggleFriend = (userName) => {
@@ -161,19 +326,18 @@ export default function App() {
 
   if (!user) {
     return authPage === "create" ? (
-      <CreateAccount
-        goToLogin={() => setAuthPage("login")}
-      />
+      <CreateAccount goToLogin={() => setAuthPage("login")} />
     ) : (
-      <Login
-        goToCreate={() => setAuthPage("create")}
-      />
+      <Login goToCreate={() => setAuthPage("create")} />
     );
   }
 
   const isTestAccount =
     import.meta.env.DEV &&
-    user.email?.toLowerCase() === "morchor.test@example.com";
+    [
+      "morchor.test@example.com",
+      "morchor.test2@example.com",
+    ].includes(user.email?.toLowerCase());
 
   const isVerifiedCMU =
     user.email?.toLowerCase().endsWith("@cmu.ac.th") &&
@@ -185,8 +349,8 @@ export default function App() {
         <h2>Email verification required</h2>
 
         <p>
-          Please verify your CMU email address before
-          accessing MorChorConnect.
+          Please verify your CMU email address before accessing
+          MorChorConnect.
         </p>
 
         <button
@@ -204,10 +368,7 @@ export default function App() {
           Resend verification email
         </button>
 
-        <button
-          type="button"
-          onClick={handleLogout}
-        >
+        <button type="button" onClick={handleLogout}>
           Return to login
         </button>
       </div>
@@ -218,130 +379,245 @@ export default function App() {
     ownProfile?.fullName ||
     ownProfile?.displayName ||
     user.displayName ||
-    posts.find((post) => post.authorId === user.uid)
-      ?.userName ||
+    posts.find((post) => post.authorId === user.uid)?.userName ||
     user.email?.split("@")[0] ||
     "Student";
 
   const nickname = (ownProfile?.nickname || "").trim();
 
   const displayName =
-    nickname &&
-    nickname.toLowerCase() !== realName.toLowerCase()
+    nickname && nickname.toLowerCase() !== realName.toLowerCase()
       ? `${realName} (${nickname})`
       : realName;
 
   const avatar =
-    ownProfile?.photoURL ||
-    user.photoURL ||
-    defaultProfile;
+    ownProfile?.photoURL || user.photoURL || defaultProfile;
 
   return (
     <div className="mc-app-shell">
       <header className="mc-account-bar">
-        <span className="mc-account-bar-label">
-          MorChorConnect · CMU community
-        </span>
+        <button
+          type="button"
+          className="mc-brand-logo"
+          onClick={() => navigate("home")}
+          aria-label="MorChorConnect Home"
+        >
+          <img
+            src={morchorLogo}
+            alt="MorChorConnect — for CMU students only"
+          />
+        </button>
 
-        <div className="mc-account-menu-wrap">
+        <div className="mc-header-actions">
+          {/* Notification bell and dropdown */}
+          <NotificationBell
+            userId={user.uid}
+            onOpenProfile={openProfile}
+            onOpenPost={openPost}
+            currentTab={currentTab}
+          />
+
+          {/* Messages shortcut */}
           <button
             type="button"
-            className="mc-account-trigger"
-            onClick={() =>
-              setAccountMenuOpen((open) => !open)
-            }
-            aria-expanded={accountMenuOpen}
-            aria-label="Open account menu"
+            className="mc-messages-trigger"
+            onClick={() => navigate("message")}
+            aria-label="Open Messages"
+            title="Messages"
           >
-            <img src={avatar} alt="" />
-            <span>{displayName}</span>
-            <span className="mc-menu-chevron">⌄</span>
+            <FaRegCommentDots />
           </button>
 
-          {accountMenuOpen && (
-            <div className="mc-account-dropdown">
-              <div className="mc-dropdown-heading">
-                <strong>{displayName}</strong>
-                <small>{user.email}</small>
+          {/* Account dropdown */}
+          <div className="mc-account-menu-wrap">
+            <button
+              type="button"
+              className="mc-account-trigger"
+              onClick={() =>
+                setAccountMenuOpen((previous) => !previous)
+              }
+              aria-expanded={accountMenuOpen}
+              aria-label="Open account menu"
+            >
+              <img src={avatar} alt="" />
+              <span>{displayName}</span>
+              <span className="mc-menu-chevron">⌄</span>
+            </button>
+
+            {accountMenuOpen && (
+              <div className="mc-account-dropdown">
+                <div className="mc-dropdown-heading">
+                  <strong>{displayName}</strong>
+                  <small>{user.email}</small>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => openProfile(user.uid)}
+                >
+                  My profile
+                </button>
+
+                <button
+                  type="button"
+                  className="mc-logout-option"
+                  onClick={handleLogout}
+                >
+                  Log out
+                </button>
               </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="mc-content-with-sidebar">
+        <SidebarNav
+          currentTab={currentTab}
+          currentUserId={user.uid}
+          onNavigate={navigate}
+          onOpenProfile={openProfile}
+        />
+
+        <div className="mc-main-panel">
+
+        {currentTab === "home" && (
+              <>
+                {focusedPostId && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("home")}
+                    className="mc-back-to-feed"
+                  >
+                    ← Back to Home Feed
+                  </button>
+                )}
+
+                <HomeFeed
+                  focusedPostId={focusedPostId}
+                  focusedCommentId={focusedCommentId}
+                  posts={
+                    focusedPostId
+                      ? posts.filter(
+                          (post) => post.id === focusedPostId
+                        )
+                      : posts
+                  }
+                  currentUserId={user.uid}
+                  currentProfile={ownProfile}
+                  onNavigate={navigate}
+                  onOpenProfile={openProfile}
+                  onDeletePost={handleDeletePost}
+                  onAddComment={handleAddComment}
+                  onToggleFriend={handleToggleFriend}
+                  followingUsers={followingUsers}
+                />
+              </>
+            )}
+
+
+          {currentTab === "create" && (
+            <CreatePost
+              onAddPost={handleAddPost}
+              onNavigate={navigate}
+            />
+          )}
+
+          {currentTab === "profile" && (
+            <StudentProfile
+              currentUser={user}
+              profileUserId={profileUserId || user.uid}
+              posts={posts}
+              onBack={() => navigate("home")}
+              onOpenProfile={openProfile}
+              onDeletePost={handleDeletePost}
+              onAddComment={handleAddComment}
+            />
+          )}
+
+          {currentTab === "notifications" && (
+            <NotificationBell
+              mode="page"
+              userId={user.uid}
+              onOpenProfile={openProfile}
+              onOpenPost={openPost}
+            />
+          )}
+
+          {![
+            "home",
+            "create",
+            "profile",
+            "notifications",
+          ].includes(currentTab) && (
+            <div className="mc-coming-soon">
+              <h2>
+                {currentTab === "message" ? "Messages" : currentTab}
+              </h2>
+
+              <p>
+                We'll connect this page when your teammate's code is
+                integrated.
+              </p>
 
               <button
                 type="button"
-                onClick={() => openProfile(user.uid)}
+                onClick={() => navigate("home")}
               >
-                My profile
-              </button>
-
-              <button
-                type="button"
-                className="mc-logout-option"
-                onClick={handleLogout}
-              >
-                Log out
+                Back to Home
               </button>
             </div>
           )}
         </div>
-      </header>
+      </main>
 
-      <main>
-        {currentTab === "home" && (
-          <HomeFeed
-            posts={posts}
-            currentUserId={user.uid}
-            currentProfile={ownProfile}
-            onNavigate={navigate}
-            onOpenProfile={openProfile}
-            onDeletePost={handleDeletePost}
-            onAddComment={handleAddComment}
-            onToggleFriend={handleToggleFriend}
-            followingUsers={followingUsers}
-          />
-        )}
+      {postToDelete && (
+        <div className="mc-delete-overlay">
+          <div
+            className="mc-delete-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="mc-delete-title"
+            aria-describedby="mc-delete-description"
+          >
+            <div className="mc-delete-icon">!</div>
 
-        {currentTab === "create" && (
-          <CreatePost
-            onAddPost={handleAddPost}
-            onNavigate={navigate}
-          />
-        )}
+            <h2 id="mc-delete-title">Delete this post?</h2>
 
-        {currentTab === "profile" && (
-          <StudentProfile
-            currentUser={user}
-            profileUserId={profileUserId || user.uid}
-            posts={posts}
-            onBack={() => navigate("home")}
-            onOpenProfile={openProfile}
-            onDeletePost={handleDeletePost}
-            onAddComment={handleAddComment}
-          />
-        )}
-
-        {!["home", "create", "profile"].includes(
-          currentTab
-        ) && (
-          <div className="mc-coming-soon">
-            <h2>
-              {currentTab === "message"
-                ? "Messages"
-                : currentTab}
-            </h2>
-
-            <p>
-              We'll connect this page when your
-              teammate's code is integrated.
+            <p id="mc-delete-description">
+              This post and its content will be permanently deleted.
+              This action cannot be undone.
             </p>
 
-            <button
-              type="button"
-              onClick={() => navigate("home")}
-            >
-              Back to Home
-            </button>
+            {deleteError && (
+              <p className="mc-delete-error" role="alert">
+                {deleteError}
+              </p>
+            )}
+
+            <div className="mc-delete-actions">
+              <button
+                type="button"
+                className="mc-delete-cancel"
+                autoFocus
+                disabled={deletingPost}
+                onClick={() => setPostToDelete(null)}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="mc-delete-confirm"
+                disabled={deletingPost}
+                onClick={confirmDeletePost}
+              >
+                {deletingPost ? "Deleting..." : "Delete post"}
+              </button>
+            </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
 }

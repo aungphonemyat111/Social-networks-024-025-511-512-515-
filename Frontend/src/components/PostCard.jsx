@@ -1,13 +1,18 @@
 
 import React, { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 
 import { db } from "../firebase";
 import { subscribeToComments } from "../services/commentService";
+import { createNotification } from "../services/notificationService";
 import {
   subscribeToLikes,
   setPostLike,
 } from "../services/likeService";
+import {
+  subscribeToFollow,
+  setFollow,
+} from "../services/followService";
 
 import PostGallery from "./PostGallery";
 import defaultProfile from "../assets/profile.png";
@@ -15,6 +20,7 @@ import "./PostCard.css";
 
 export default function PostCard({
   post,
+  focusCommentId = null,
   currentUserId,
   onOpenProfile,
   isFollowing,
@@ -23,6 +29,7 @@ export default function PostCard({
   onToggleFriend,
 }) {
   const [authorProfile, setAuthorProfile] = useState(null);
+  const [taggedProfiles, setTaggedProfiles] = useState({});
 
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [comments, setComments] = useState([]);
@@ -38,6 +45,13 @@ export default function PostCard({
   const [savingLike, setSavingLike] = useState(false);
 
   const [notice, setNotice] = useState("");
+  const [followingAuthor, setFollowingAuthor] = useState(false);
+  const [followSaving, setFollowSaving] = useState(false);
+
+  // Open the comments when a notification targets a specific comment/reply.
+  useEffect(() => {
+    if (focusCommentId) setCommentsOpen(true);
+  }, [focusCommentId]);
 
   // Load the author's latest profile.
   useEffect(() => {
@@ -59,6 +73,35 @@ export default function PostCard({
     );
   }, [post.authorId]);
 
+  // Resolve multiple tagged students' names from their Firestore profiles.
+  useEffect(() => {
+    const ids = Array.isArray(post.taggedUserIds)
+      ? [...new Set(post.taggedUserIds.filter(Boolean))]
+      : [];
+    let active = true;
+
+    setTaggedProfiles({});
+    if (ids.length > 0) {
+      Promise.all(
+        ids.map(async (uid) => {
+          try {
+            const snapshot = await getDoc(doc(db, "users", uid));
+            const profile = snapshot.exists() ? snapshot.data() : {};
+            const name = profile.fullName || profile.displayName ||
+              profile.nickname || profile.name || "CMU Student";
+            return [uid, name];
+          } catch (error) {
+            console.error("Could not load tagged student:", error);
+            return [uid, "CMU Student"];
+          }
+        })
+      ).then((results) => {
+        if (active) setTaggedProfiles(Object.fromEntries(results));
+      });
+    }
+    return () => { active = false; };
+  }, [post.taggedUserIds]);
+
   // Comments and replies.
   useEffect(() => {
     if (!post.id) return;
@@ -71,6 +114,28 @@ export default function PostCard({
       }
     );
   }, [post.id]);
+
+  // Watch whether I follow this post's author.
+useEffect(() => {
+  setFollowingAuthor(false);
+
+  if (
+    !currentUserId ||
+    !post.authorId ||
+    currentUserId === post.authorId
+  ) {
+    return;
+  }
+
+  return subscribeToFollow(
+    currentUserId,
+    post.authorId,
+    setFollowingAuthor,
+    (error) => {
+      console.error("Could not load follow status:", error);
+    }
+  );
+}, [currentUserId, post.authorId]);
 
   // Likes and unlikes.
   useEffect(() => {
@@ -128,17 +193,60 @@ export default function PostCard({
     }
   };
 
+  const handleFollowClick = async () => {
+    if (
+      followSaving ||
+      !currentUserId ||
+      !post.authorId ||
+      currentUserId === post.authorId
+    ) {
+      return;
+    }
+  
+    setFollowSaving(true);
+  
+    try {
+      await setFollow(
+        currentUserId,
+        post.authorId,
+        !followingAuthor
+      );
+    } catch (error) {
+      console.error("Could not update follow:", error);
+      alert("Could not update follow. Please try again.");
+    } finally {
+      setFollowSaving(false);
+    }
+  };
+
   const handleLikeClick = async () => {
     if (savingLike || !currentUserId) return;
 
+    const shouldLike = !postLiked;
     setSavingLike(true);
 
     try {
-      await setPostLike(
-        post.id,
-        currentUserId,
-        !postLiked
-      );
+      // Only a successful new like creates a notification.
+      await setPostLike(post.id, currentUserId, shouldLike);
+
+      if (
+        shouldLike &&
+        post.authorId &&
+        post.authorId !== currentUserId &&
+        post.privacy === "public"
+      ) {
+        try {
+          await createNotification({
+            recipientId: post.authorId,
+            actorId: currentUserId,
+            type: "like",
+            postId: post.id,
+          });
+        } catch (notificationError) {
+          // The like stays saved even if the notification fails.
+          console.error("Like saved, but notification failed:", notificationError);
+        }
+      }
     } catch (error) {
       console.error("Could not update like:", error);
       alert("Could not update your like.");
@@ -260,9 +368,16 @@ export default function PostCard({
               {userName}
             </button>
 
-            {post.taggedPerson && (
+            {(Array.isArray(post.taggedUserIds) && post.taggedUserIds.length > 0
+              ? post.taggedUserIds.some((uid) => taggedProfiles[uid])
+              : Boolean(post.taggedPerson)) && (
               <span className="mc-post-tag">
-                {" "}is with {post.taggedPerson}
+                {" "}is with {Array.isArray(post.taggedUserIds) &&
+                post.taggedUserIds.length > 0
+                  ? post.taggedUserIds.map((uid) => taggedProfiles[uid] ||
+                    (uid === post.taggedUserId ? post.taggedPerson : null) ||
+                    "CMU Student").join(", ")
+                  : post.taggedPerson}
               </span>
             )}
 
@@ -281,26 +396,29 @@ export default function PostCard({
         </div>
 
         <div className="mc-post-user-actions">
-          {isOwnPost ? (
-            <button
-              type="button"
-              className="mc-delete"
-              onClick={onDelete}
-              aria-label="Delete post"
-            >
-              ✕
-            </button>
-          ) : (
-            typeof onToggleFriend === "function" && (
+        {isOwnPost ? (
+              <button
+                type="button"
+                className="mc-delete"
+                onClick={onDelete}
+                aria-label="Delete post"
+              >
+                ✕
+              </button>
+            ) : (
               <button
                 type="button"
                 className="mc-follow"
-                onClick={onToggleFriend}
+                onClick={handleFollowClick}
+                disabled={followSaving}
               >
-                {isFollowing ? "Added ✓" : "Add friend"}
+                {followSaving
+                  ? "Saving..."
+                  : followingAuthor
+                    ? "✓ Following"
+                    : "+ Follow"}
               </button>
-            )
-          )}
+            )}
         </div>
       </div>
 
@@ -362,7 +480,11 @@ export default function PostCard({
           {mainComments.map((comment) => (
             <div
               key={comment.id}
-              style={{ marginBottom: 16 }}
+              style={{
+                marginBottom: 16,
+                background: focusCommentId === comment.id ? "#f3edff" : undefined,
+                borderRadius: 8,
+              }}
             >
               <div className="mc-comment">
                 <strong>
@@ -406,7 +528,11 @@ export default function PostCard({
                   <div
                     className="mc-comment"
                     key={reply.id}
-                    style={{ marginBottom: 8 }}
+                    style={{
+                      marginBottom: 8,
+                      background: focusCommentId === reply.id ? "#f3edff" : undefined,
+                      borderRadius: 8,
+                    }}
                   >
                     <strong>
                       {reply.name || "User"}

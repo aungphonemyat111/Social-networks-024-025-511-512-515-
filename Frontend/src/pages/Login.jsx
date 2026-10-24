@@ -25,11 +25,13 @@ async function handleLogin() {
         return;
     }
 
-    // Allow a development-only test account
+    // Allow two specific test accounts during development
     const isTestAccount =
         import.meta.env.DEV &&
-        cleanEmail === "morchor.test@example.com";
-
+        [
+            "morchor.test@example.com",
+            "morchor.test2@example.com",
+        ].includes(cleanEmail);
     // Other accounts must use CMU email addresses
     if (!cleanEmail.endsWith("@cmu.ac.th") && !isTestAccount) {
         setError("Please use a valid CMU email.");
