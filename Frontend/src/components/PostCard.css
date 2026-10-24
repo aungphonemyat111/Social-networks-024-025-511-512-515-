@@ -1,0 +1,23 @@
+/* Scoped to the combined post card; Alyna's page layout CSS remains unchanged. */
+.mc-post-card { background: white; border: 1px solid #eeebff; border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 3px 14px rgba(17,0,102,.05); }
+.mc-post-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.mc-post-author { color: #110066; font-size: 15px; }
+.mc-post-tag { color: #7b3ff2; font-weight: 600; }
+.mc-post-detail, .mc-post-meta { color: #6b7280; }
+.mc-post-meta { font-size: 12px; margin-top: 4px; }
+.mc-post-text { color: #374151; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 14px 0; }
+.mc-post-image { display: block; width: 100%; max-height: 360px; border-radius: 12px; object-fit: cover; margin: 12px 0; }
+.mc-post-stats { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; color: #6b7280; font-size: 13px; }
+.mc-post-actions { display: flex; justify-content: space-around; border-top: 1px solid #eee9ff; padding-top: 8px; gap: 6px; }
+.mc-post-card button { cursor: pointer; font: inherit; }
+.mc-post-actions button, .mc-post-stats button { border: none; background: transparent; color: #5123d6; padding: 8px 10px; border-radius: 8px; }
+.mc-post-actions button:hover, .mc-post-stats button:hover { background: #f4f0ff; }
+.mc-post-actions .mc-liked { color: #dc2668; font-weight: 700; }
+.mc-delete { color: #ef4444; border: 0; background: transparent; padding: 5px; }
+.mc-follow { background: #ede6ff; color: #5123d6; border: 0; border-radius: 8px; padding: 6px 10px; }
+.mc-comment { background: #f7f5fc; border-radius: 8px; margin: 8px 0; padding: 9px; font-size: 13px; overflow-wrap: anywhere; }
+.mc-comment-form { display: flex; gap: 8px; margin-top: 12px; }
+.mc-comment-form input { flex: 1; min-width: 0; border: 1px solid #d7d0eb; border-radius: 8px; padding: 10px; }
+.mc-comment-form button { border: 0; border-radius: 8px; background: #5123d6; color: white; padding: 10px 14px; }
+.mc-comment-form button:disabled { opacity: .5; cursor: not-allowed; }
+.mc-post-notice { color: #5123d6; font-size: 13px; padding-top: 8px; }

@@ -1,0 +1,740 @@
+
+/* ======================================
+   CREATE POST PAGE
+   ====================================== */
+
+   .create-post-page {
+    width: 100%;
+    min-height: calc(100vh - 72px);
+    padding: 32px 24px;
+    background-color: #f4f2ff;
+    box-sizing: border-box;
+  }
+  
+  /* Main form container */
+  .create-post-page .mc-create-post-layout {
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto;
+    background-color: #faf9ff;
+    border: 1px solid #e1dbff;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(123, 63, 242, 0.06);
+    overflow: hidden;
+  }
+  
+  .create-post-page .mc-create-post-content {
+    width: 100%;
+    padding: 32px;
+  }
+  
+  /* ======================================
+     POST FORM
+     ====================================== */
+  
+  .create-post-page .mc-create-post-form {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    padding: 32px;
+    background: #ffffff;
+    border: 1px solid #e8e5ef;
+    border-radius: 16px;
+  }
+  
+  /* Heading */
+  .create-post-page .mc-create-post-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .create-post-page .mc-create-post-heading h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+  
+  .create-post-page .mc-create-post-details {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 13px;
+  }
+  
+  .create-post-page .mc-create-post-tagged {
+    color: #5123d6;
+    background: #f0eaff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-weight: 500;
+  }
+  
+  .create-post-page .mc-create-post-feeling {
+    color: #b56b13;
+    background: #fff4df;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-weight: 500;
+  }
+  
+  /* ======================================
+     POST INPUT AREA
+     ====================================== */
+  
+  .create-post-page .mc-create-post-input {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+  }
+  
+  .create-post-page .mc-create-post-avatar {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 50%;
+    background-color: #e5e7eb;
+  }
+  
+  .create-post-page .mc-create-post-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .create-post-page .mc-create-post-input textarea {
+    flex: 1;
+    min-width: 0;
+    min-height: 165px;
+    padding: 16px;
+    resize: vertical;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    outline: none;
+    background: #ffffff;
+    color: #374151;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.6;
+    transition: border-color 0.2s ease;
+  }
+  
+  .create-post-page .mc-create-post-input textarea::placeholder {
+    color: #9ca3af;
+  }
+  
+  .create-post-page .mc-create-post-input textarea:focus {
+    border-color: #8653eb;
+    box-shadow: 0 0 0 3px rgba(134, 83, 235, 0.1);
+  }
+  
+  .create-post-page .mc-create-post-input textarea:disabled {
+    background: #f9fafb;
+    cursor: not-allowed;
+  }
+  
+  /* ======================================
+     PHOTO PREVIEWS
+     ====================================== */
+  
+  .create-post-page .mc-create-post-previews {
+    width: 100%;
+  }
+  
+  .create-post-page .mc-create-post-photo-count {
+    margin: 0 0 12px;
+    color: #6b7280;
+    font-size: 13px;
+  }
+  
+  .create-post-page .mc-create-post-photo-grid {
+    display: grid;
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(min(100%, 160px), 1fr)
+    );
+    gap: 12px;
+  }
+  
+  .create-post-page .mc-create-post-photo-item {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #e5e0ee;
+    border-radius: 12px;
+    background: #f1eef7;
+  }
+  
+  .create-post-page .mc-create-post-preview-img {
+    display: block;
+    width: 100%;
+    height: 175px;
+    object-fit: cover;
+  }
+  
+  .create-post-page .mc-create-post-remove-photo {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 29px;
+    height: 29px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.72);
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  
+  .create-post-page .mc-create-post-remove-photo:hover {
+    background: #d94461;
+  }
+  
+  .create-post-page .mc-create-post-remove-photo:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* ======================================
+     PHOTO, TAG AND FEELINGS BUTTONS
+     ====================================== */
+  
+  .create-post-page .mc-create-post-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 0;
+    border-top: 1px solid #eeeaf5;
+    border-bottom: 1px solid #eeeaf5;
+  }
+  
+  .create-post-page .mc-create-post-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 40px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #4b5563;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .create-post-page .mc-create-post-option:hover {
+    background: #f4efff;
+  }
+  
+  .create-post-page .mc-create-post-option svg {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  
+  .create-post-page .mc-create-post-image-icon {
+    color: #3b82f6;
+  }
+  
+  .create-post-page .mc-create-post-tag-icon {
+    color: #a855f7;
+  }
+  
+  .create-post-page .mc-create-post-feeling-icon {
+    color: #f59e0b;
+  }
+  
+  .create-post-page .mc-create-post-file-input {
+    display: none;
+  }
+  
+  .create-post-page .mc-create-post-option:disabled,
+  .create-post-page .mc-create-post-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* ======================================
+     PRIVACY AND POST ACTIONS
+     ====================================== */
+  
+  .create-post-page .mc-create-post-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  .create-post-page .mc-create-post-privacy {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .create-post-page .mc-create-post-privacy label {
+    color: #374151;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  
+  .create-post-page .mc-create-post-select-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .create-post-page .mc-create-post-audience-icon {
+    position: absolute;
+    left: 13px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    color: #4b5563;
+    font-size: 14px;
+    pointer-events: none;
+  }
+  
+  .create-post-page .mc-create-post-select-wrap select {
+    width: 190px;
+    min-height: 44px;
+    padding: 10px 30px 10px 38px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    outline: none;
+    background: white;
+    color: #374151;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  
+  .create-post-page .mc-create-post-select-wrap select:focus {
+    border-color: #8653eb;
+    box-shadow: 0 0 0 3px rgba(134, 83, 235, 0.1);
+  }
+  
+  .create-post-page .mc-create-post-select-wrap select:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  
+  /* Action buttons */
+  .create-post-page .mc-create-post-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+  
+  .create-post-page .mc-create-post-discard,
+  .create-post-page .mc-create-post-submit {
+    min-width: 108px;
+    height: 44px;
+    padding: 0 22px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background 0.2s ease,
+      opacity 0.2s ease;
+  }
+  
+  .create-post-page .mc-create-post-discard {
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #4b5563;
+  }
+  
+  .create-post-page .mc-create-post-discard:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+  }
+  
+  .create-post-page .mc-create-post-submit {
+    border: none;
+    background: linear-gradient(90deg, #7b3ff2, #9b5cff);
+    color: white;
+  }
+  
+  .create-post-page .mc-create-post-submit:hover {
+    background: #5123d6;
+  }
+  
+  .create-post-page .mc-create-post-discard:disabled,
+  .create-post-page .mc-create-post-submit:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  
+  /* ======================================
+     RESPONSIVE DESIGN
+     ====================================== */
+  
+  @media (max-width: 900px) {
+    .create-post-page {
+      padding: 24px 16px;
+    }
+  
+    .create-post-page .mc-create-post-content {
+      padding: 22px;
+    }
+  
+    .create-post-page .mc-create-post-form {
+      padding: 24px;
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .create-post-page {
+      padding: 16px 12px;
+    }
+  
+    .create-post-page .mc-create-post-layout {
+      border-radius: 14px;
+    }
+  
+    .create-post-page .mc-create-post-content {
+      padding: 14px;
+    }
+  
+    .create-post-page .mc-create-post-form {
+      gap: 20px;
+      padding: 18px;
+    }
+  
+    .create-post-page .mc-create-post-heading h2 {
+      font-size: 20px;
+    }
+  
+    .create-post-page .mc-create-post-input {
+      gap: 10px;
+    }
+  
+    .create-post-page .mc-create-post-avatar {
+      width: 40px;
+      height: 40px;
+    }
+  
+    .create-post-page .mc-create-post-input textarea {
+      min-height: 140px;
+      padding: 12px;
+      font-size: 14px;
+    }
+  
+    .create-post-page .mc-create-post-options {
+      justify-content: space-between;
+      gap: 5px;
+    }
+  
+    .create-post-page .mc-create-post-option {
+      padding: 8px;
+      gap: 5px;
+      font-size: 12px;
+    }
+  
+    .create-post-page .mc-create-post-option svg {
+      font-size: 16px;
+    }
+  
+    .create-post-page .mc-create-post-footer {
+      align-items: stretch;
+      flex-direction: column;
+    }
+  
+    .create-post-page .mc-create-post-privacy {
+      justify-content: space-between;
+    }
+  
+    .create-post-page .mc-create-post-actions {
+      justify-content: flex-end;
+    }
+  
+    .create-post-page .mc-create-post-discard,
+    .create-post-page .mc-create-post-submit {
+      min-width: 90px;
+      padding: 0 15px;
+    }
+  
+    .create-post-page .mc-create-post-preview-img {
+      height: 145px;
+    }
+  }
+
+
+/* ======================================
+   INLINE FEEDBACK MESSAGE
+   ====================================== */
+
+.create-post-page .mc-create-post-notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #f0cf9e;
+  border-radius: 10px;
+  background: #fff7e9;
+  color: #875518;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.create-post-page .mc-create-post-notice button,
+.create-post-page .mc-create-post-picker-heading button,
+.create-post-page .mc-create-post-details button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* ======================================
+   TAGGED STUDENT AND FEELING CHIPS
+   ====================================== */
+
+.create-post-page .mc-create-post-tagged,
+.create-post-page .mc-create-post-feeling {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ======================================
+   STUDENT SEARCH AND FEELINGS PANELS
+   ====================================== */
+
+.create-post-page .mc-create-post-picker {
+  padding: 18px;
+  border: 1px solid #e4ddf3;
+  border-radius: 14px;
+  background: #faf8ff;
+}
+
+.create-post-page .mc-create-post-picker-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  color: #32224f;
+  font-size: 15px;
+}
+
+.create-post-page .mc-create-post-student-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #e3dbf3;
+  border-radius: 10px;
+  background: white;
+  color: #7753b6;
+}
+
+.create-post-page .mc-create-post-student-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #374151;
+  font-size: 13px;
+}
+
+.create-post-page .mc-create-post-student-list {
+  max-height: 300px;
+  margin-top: 12px;
+  overflow-y: auto;
+}
+
+.create-post-page .mc-create-post-student-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 6px;
+  border-bottom: 1px solid #eee8f7;
+}
+
+.create-post-page .mc-create-post-student-row > img {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.create-post-page .mc-create-post-student-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.create-post-page .mc-create-post-student-info strong {
+  color: #2c2042;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.create-post-page .mc-create-post-student-info small {
+  color: #867a96;
+  font-size: 12px;
+}
+
+.create-post-page .mc-create-post-student-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 7px;
+}
+
+.create-post-page .mc-create-post-student-actions button {
+  padding: 8px 10px;
+  border: 1px solid #e0d4f7;
+  border-radius: 8px;
+  background: white;
+  color: #6540ab;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.create-post-page .mc-create-post-student-actions button:hover {
+  background: #eee6ff;
+}
+
+.create-post-page .mc-create-post-picker-empty {
+  margin: 0;
+  padding: 22px 10px;
+  color: #82758f;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Feeling choices */
+.create-post-page .mc-create-post-feeling-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.create-post-page .mc-create-post-feeling-choices button {
+  padding: 9px 14px;
+  border: 1px solid #e5daf6;
+  border-radius: 20px;
+  background: white;
+  color: #68479d;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.create-post-page .mc-create-post-feeling-choices button:hover {
+  background: #eee6ff;
+}
+
+/* ======================================
+   DISCARD CONFIRMATION DIALOG
+   ====================================== */
+
+.mc-create-post-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(30, 20, 50, 0.48);
+}
+
+.mc-create-post-dialog {
+  width: 100%;
+  max-width: 410px;
+  padding: 28px;
+  border: 1px solid #eae4f1;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 20px 60px rgba(26, 15, 46, 0.2);
+}
+
+.mc-create-post-dialog h3 {
+  margin: 0 0 12px;
+  color: #302446;
+  font-size: 20px;
+}
+
+.mc-create-post-dialog p {
+  margin: 0 0 24px;
+  color: #736781;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.mc-create-post-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.mc-create-post-dialog-actions button {
+  padding: 11px 15px;
+  border: 1px solid #dfd9e8;
+  border-radius: 9px;
+  background: white;
+  color: #493e59;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mc-create-post-dialog-actions .mc-create-post-danger {
+  border-color: #d94461;
+  background: #d94461;
+  color: white;
+}
+
+/* ======================================
+   MOBILE
+   ====================================== */
+
+@media (max-width: 600px) {
+  .create-post-page .mc-create-post-student-row {
+    flex-wrap: wrap;
+  }
+
+  .create-post-page .mc-create-post-student-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .mc-create-post-dialog {
+    padding: 22px;
+  }
+}
+
+  

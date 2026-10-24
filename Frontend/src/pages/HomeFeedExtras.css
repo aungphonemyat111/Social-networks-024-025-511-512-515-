@@ -1,0 +1,76 @@
+
+/* Small layout improvements for the Home Feed */
+
+/* Keep the sidebar visible while scrolling */
+@media (min-width: 769px) {
+    .create-home-feed,
+    .create-home-feed .home-layout {
+      overflow: visible;
+    }
+  
+    .create-home-feed .home-layout {
+      align-items: flex-start;
+    }
+  
+    .create-home-feed .sidebar {
+      position: sticky;
+      top: 16px;
+      align-self: flex-start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      z-index: 10;
+    }
+  }
+  
+  /* On smaller screens, use the normal page layout */
+  @media (max-width: 768px) {
+    .create-home-feed .sidebar {
+      position: static;
+      max-height: none;
+    }
+  }
+  
+  /* Profile pictures inside posts */
+  .mc-author-avatar {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #f0edf8;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  
+  .mc-author-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .mc-author-name {
+    display: inline;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #30204f;
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+  
+  .mc-author-name:hover {
+    color: #7546c5;
+    text-decoration: underline;
+  }
+  
+  .mc-author-avatar:focus-visible,
+  .mc-author-name:focus-visible {
+    outline: 2px solid #7546c5;
+    outline-offset: 3px;
+  }
+  

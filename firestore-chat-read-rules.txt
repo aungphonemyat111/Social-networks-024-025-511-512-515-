@@ -1,0 +1,112 @@
+// REPLACE ONLY YOUR EXISTING match /chats/{chatId} BLOCK with the block below.
+// DO NOT replace your entire rules file.
+// ADD THIS BLOCK INSIDE:
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//     ... existing matches ...
+//     [PASTE BELOW HERE]
+//   }
+// }
+// KEEP all existing users/posts/follows/likes/comments/notification rules.
+
+match /chats/{chatId} {
+  function chatPath() {
+    return /databases/$(database)/documents/chats/$(chatId);
+  }
+
+  function isParticipant() {
+    return request.auth != null
+      && exists(chatPath())
+      && request.auth.uid in get(chatPath()).data.memberIds;
+  }
+
+  allow read: if request.auth != null
+    && request.auth.uid in resource.data.memberIds;
+
+  allow create: if request.auth != null
+    && request.resource.data.keys().hasAll([
+      'type', 'name', 'memberIds', 'createdBy',
+      'createdAt', 'updatedAt', 'lastMessageText',
+      'lastMessageSenderId', 'lastMessageAt'
+    ])
+    && request.resource.data.keys().hasOnly([
+      'type', 'name', 'memberIds', 'createdBy',
+      'createdAt', 'updatedAt', 'lastMessageText',
+      'lastMessageSenderId', 'lastMessageAt'
+    ])
+    && request.resource.data.type in ['individual', 'group']
+    && request.resource.data.memberIds is list
+    && request.resource.data.memberIds.size() >= 2
+    && request.resource.data.memberIds.size() <= 20
+    && request.resource.data.memberIds.toSet().size() == request.resource.data.memberIds.size()
+    && request.auth.uid in request.resource.data.memberIds
+    && request.resource.data.createdBy == request.auth.uid
+    && request.resource.data.createdAt == request.time
+    && request.resource.data.updatedAt == request.time
+    && request.resource.data.lastMessageText == ''
+    && request.resource.data.lastMessageSenderId == null
+    && request.resource.data.lastMessageAt == null
+    && (
+      (
+        request.resource.data.type == 'individual'
+        && request.resource.data.memberIds.size() == 2
+        && request.resource.data.name == null
+      ) || (
+        request.resource.data.type == 'group'
+        && request.resource.data.memberIds.size() >= 3
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 40
+      )
+    );
+
+  // Participants may update only the conversation's last-message preview.
+  // Alternatively, a group member can remove themselves from the group.
+  allow update: if request.auth != null
+    && request.auth.uid in resource.data.memberIds
+    && (
+      (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'lastMessageText', 'lastMessageSenderId', 'lastMessageAt', 'updatedAt'
+        ])
+        && request.resource.data.lastMessageText is string
+        && request.resource.data.lastMessageText.size() > 0
+        && request.resource.data.lastMessageText.size() <= 1000
+        && request.resource.data.lastMessageSenderId == request.auth.uid
+        && request.resource.data.lastMessageAt == request.time
+        && request.resource.data.updatedAt == request.time
+      ) || (
+        resource.data.type == 'group'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'memberIds', 'updatedAt'
+        ])
+        && request.resource.data.memberIds == resource.data.memberIds.removeAll([request.auth.uid])
+        && request.resource.data.updatedAt == request.time
+      ) || (
+        // Only mark YOUR OWN inbox as read; never change someone else's cursor.
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt'])
+        && request.resource.data.readAt is map
+        && request.resource.data.readAt.diff(resource.data.get('readAt', {}))
+          .affectedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.readAt[request.auth.uid] is timestamp
+        && request.resource.data.readAt[request.auth.uid] <= request.time
+      )
+    );
+
+  allow delete: if false;
+
+  match /messages/{messageId} {
+    allow read: if isParticipant();
+
+    allow create: if isParticipant()
+      && request.resource.data.keys().hasAll(['senderId', 'text', 'createdAt'])
+      && request.resource.data.keys().hasOnly(['senderId', 'text', 'createdAt'])
+      && request.resource.data.senderId == request.auth.uid
+      && request.resource.data.text is string
+      && request.resource.data.text.size() > 0
+      && request.resource.data.text.size() <= 1000
+      && request.resource.data.createdAt == request.time;
+
+    allow update, delete: if false;
+  }
+}
