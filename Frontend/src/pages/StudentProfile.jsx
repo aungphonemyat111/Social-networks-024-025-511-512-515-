@@ -25,6 +25,7 @@ export default function StudentProfile({
   posts = [],
   onBack,
   onOpenProfile,
+  onMessage,
   onDeletePost,
   onAddComment,
 }) {
@@ -384,6 +385,18 @@ useEffect(() => {
                     ? "✓ Following"
                     : "+ Follow"}
             </button>
+            )}
+
+            {!isOwner && (
+              <button
+                type="button"
+                className="mc-profile-follow mc-profile-message"
+                onClick={() => onMessage?.(profileUserId)}
+                disabled={!onMessage}
+                title="Send a direct message"
+              >
+                ✉ Message
+              </button>
             )}
           </div>
 

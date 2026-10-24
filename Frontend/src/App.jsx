@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import Messaging from "./Messaging";
+import { subscribeToUnreadMessageCounts } from "./services/messagingService";
 import {
   onAuthStateChanged,
   signOut,
@@ -33,6 +35,8 @@ export default function App() {
   const [authPage, setAuthPage] = useState("login");
 
   const [currentTab, setCurrentTab] = useState("home");
+  const [messageRecipientId, setMessageRecipientId] = useState(null);
+  const [unreadByChat, setUnreadByChat] = useState({});
   const [focusedPostId, setFocusedPostId] = useState(null);
   const [focusedCommentId, setFocusedCommentId] = useState(null);
   const [profileUserId, setProfileUserId] = useState(null);
@@ -112,6 +116,23 @@ export default function App() {
     );
   }, [user?.uid]);
 
+  // Unread messages are independent of the notification bell and page.
+  useEffect(() => {
+    if (!user?.uid) {
+      setUnreadByChat({});
+      return;
+    }
+    return subscribeToUnreadMessageCounts(
+      user.uid,
+      setUnreadByChat,
+      (error) => console.error('Could not load unread message counts:', error)
+    );
+  }, [user?.uid]);
+
+  const unreadMessageTotal = Object.values(unreadByChat).reduce(
+    (total, count) => total + count, 0
+  );
+
   // Posts stay synchronized with Firestore.
   useEffect(() => {
     if (!user?.uid) {
@@ -127,6 +148,7 @@ export default function App() {
   }, [user?.uid]);
 
   const navigate = (tab) => {
+    setMessageRecipientId(null);
     setFocusedPostId(null);
     setFocusedCommentId(null);
   
@@ -145,6 +167,13 @@ export default function App() {
     setCurrentTab("profile");
     setAccountMenuOpen(false);
   };
+  const openMessage = (recipientId) => {
+    if (!recipientId || recipientId === user?.uid) return;
+    setMessageRecipientId(recipientId);
+    setCurrentTab("message");
+    setAccountMenuOpen(false);
+  };
+
   const openPost = (postId, commentId = null) => {
     if (!postId) return;
 
@@ -422,10 +451,29 @@ const handleAddComment = async (
             type="button"
             className="mc-messages-trigger"
             onClick={() => navigate("message")}
-            aria-label="Open Messages"
+            aria-label={unreadMessageTotal > 0
+              ? `Open Messages, ${unreadMessageTotal} unread`
+              : "Open Messages"}
             title="Messages"
+            style={{ position: "relative" }}
           >
             <FaRegCommentDots />
+            {unreadMessageTotal > 0 && (
+              <span
+                className="mc-message-unread-count"
+                aria-hidden="true"
+                style={{
+                  position: "absolute", top: -6, right: -7,
+                  minWidth: 18, height: 18, padding: "0 4px",
+                  borderRadius: 999, background: "#dc2626", color: "#fff",
+                  fontSize: 10, fontWeight: 700,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 0 0 2px #fff",
+                }}
+              >
+                {unreadMessageTotal > 99 ? "99+" : unreadMessageTotal}
+              </span>
+            )}
           </button>
 
           {/* Account dropdown */}
@@ -530,6 +578,7 @@ const handleAddComment = async (
               posts={posts}
               onBack={() => navigate("home")}
               onOpenProfile={openProfile}
+              onMessage={openMessage}
               onDeletePost={handleDeletePost}
               onAddComment={handleAddComment}
             />
@@ -544,11 +593,21 @@ const handleAddComment = async (
             />
           )}
 
+          {currentTab === "message" && (
+            <Messaging
+              userId={user.uid}
+              userName={displayName}
+            initialRecipientId={messageRecipientId}
+              unreadByChat={unreadByChat}
+            />
+          )}
+
           {![
             "home",
             "create",
             "profile",
             "notifications",
+            "message",
           ].includes(currentTab) && (
             <div className="mc-coming-soon">
               <h2>
