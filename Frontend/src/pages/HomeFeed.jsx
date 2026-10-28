@@ -1,5 +1,4 @@
 import React from "react";
-import { FaSearch } from "react-icons/fa";
 import PostCard from "../components/PostCard";
 import defaultProfile from "../assets/profile.png";
 import "./HomeFeed.css";
@@ -21,41 +20,10 @@ export default function HomeFeed({
   const myAvatar = currentProfile?.photoURL || defaultProfile;
 
   return (
-    <div className="create-home-feed">
-      <div className="home-layout">
-        <div className="home-content">
-          {!focusedPostId && (
-            <>
-              <div className="navbar">
-                <div className="search-bar">
-                  <FaSearch />
-                  <input
-                    type="text"
-                    placeholder="Search posts, people, or events..."
-                  />
-                </div>
-                <div className="nav-right">
-                  <div className="avator-small">
-                    <button
-                      type="button"
-                      onClick={() => onOpenProfile(currentUserId)}
-                      aria-label="View my profile"
-                      style={{
-                        padding: 0,
-                        border: "none",
-                        background: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <img src={myAvatar} alt="My profile" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="main-feed-grid">
+<div className="create-home-feed">
+  <div className="home-layout">
+    <div className="home-content">
+      <div className="main-feed-grid">
             <div className="feed-stream">
               {!focusedPostId && (
                 <div

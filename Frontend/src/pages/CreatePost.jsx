@@ -6,7 +6,6 @@ import {
   FaUsers,
   FaSmile,
   FaGlobeAmericas,
-  FaUserFriends,
   FaUserLock,
   FaTimes,
   FaSearch,
@@ -226,14 +225,9 @@ function CreatePost({ onAddPost, onNavigate }) {
   };
 
   const renderAudienceIcon = () => {
-    switch (audience) {
-      case "public":
-        return <FaGlobeAmericas />;
-      case "friends":
-        return <FaUserFriends />;
-      default:
-        return <FaUserLock />;
-    }
+    return audience === "public"
+      ? <FaGlobeAmericas />
+      : <FaUserLock />;
   };
 
   const resetDraft = () => {
@@ -257,13 +251,7 @@ function CreatePost({ onAddPost, onNavigate }) {
       showError("Please write something or choose a photo.");
       return;
     }
-
-    if (audience === "friends") {
-      showError(
-        "Friends-only posts are coming soon. Please choose Public or Only Me."
-      );
-      return;
-    }
+r
 
     if (attachedFiles.length > 0 && audience !== "public") {
       showError(
@@ -634,9 +622,6 @@ function CreatePost({ onAddPost, onNavigate }) {
                     disabled={saving}
                   >
                     <option value="public">Public</option>
-                    <option value="friends">
-                      Friends only (coming soon)
-                    </option>
                     <option value="private">Only Me</option>
                   </select>
                 </div>
